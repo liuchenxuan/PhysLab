@@ -203,6 +203,117 @@ canvas{display:block;width:100%}
 .msg.err{background:#fff1f0;color:var(--bad)}
 .chart canvas{touch-action:pan-y}
 
+/* ================= V3：公式排版 ================= */
+.math{font-family:var(--math);font-size:1.1em;letter-spacing:.01em}
+.math i,.mv{font-style:italic;font-family:var(--math)}
+.mv{font-size:1.06em}
+.mfn{font-style:normal;margin:0 .05em 0 .12em}
+.math sub,.math sup,.mv+sub{font:normal .68em var(--sans)}
+sub,sup{line-height:0}
+.mf{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .14em;line-height:1.15;font-size:.9em;white-space:nowrap;font-family:var(--math)}
+.mf>span{display:block;padding:0 .3em}
+.mf>span:first-child{border-bottom:1px solid currentColor;padding-bottom:.07em}
+.mf>span:last-child{padding-top:.05em}
+.mr{white-space:nowrap;font-family:var(--math)}
+.mr-b{border-top:1px solid currentColor;padding:0 .1em 0 .05em;margin-left:-.02em}
+.apx{color:var(--ink3);font-size:.9em;margin-left:.25em;white-space:nowrap}
+.marr{color:var(--flag);margin:0 .4em;font-family:var(--math)}
+.mres{font-weight:700;color:#0d3b66;background:linear-gradient(transparent 60%,#ffe7a0 60%);padding:0 .12em;border-radius:2px}
+/* 解题过程：左标签、右公式 */
+.sol{border:1px solid var(--line2);border-radius:10px;background:#fff;padding:0;margin-bottom:10px;overflow:hidden}
+.sol h5{font-size:13px;margin:0;padding:8px 12px;background:#faf6ec;border-bottom:1px solid var(--line2);color:var(--ink);display:flex;gap:8px;align-items:center;line-height:1.7}
+.sol-n{flex:none;width:20px;height:20px;border-radius:50%;background:var(--flag);color:#fff;font:700 11px/20px var(--sans);text-align:center}
+.eqs{display:grid;grid-template-columns:max-content minmax(0,1fr)}
+.eq-t{font-size:11.5px;color:#7a5a12;background:#fffaf0;padding:11px 10px 0;border-bottom:1px dashed var(--line2);white-space:nowrap;text-align:right;letter-spacing:.04em}
+.eq-b{padding:6px 12px;border-bottom:1px dashed var(--line2);font-size:13px;line-height:2.25;word-break:break-word;min-width:0}
+.eqs>:nth-last-child(-n+2){border-bottom:0}
+.kv td{line-height:1.9}
+.ph header{gap:8px}
+.ph-n{flex:none;width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font:700 11px/20px var(--sans);text-align:center}
+.ph.on .ph-n{background:var(--flag)}
+.ph ul{list-style:none;padding:0;line-height:2}
+.ph li{padding:1px 0;border-top:1px dashed var(--line2)}
+.ph li b{color:var(--ink);margin-right:6px}
+.ph footer{line-height:1.9}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.tile{border:1px solid var(--line2);border-radius:10px;background:#fff;padding:7px 10px;min-width:0}
+.tile span{display:block;font-size:11.5px;color:var(--ink2)}
+.tile b{display:block;font:600 15px/2 var(--mono);color:#0d3b66}
+dialog.read{width:min(940px,calc(100vw - 20px));max-height:calc(100vh - 28px)}
+.read-h{display:flex;gap:8px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--paper);z-index:2}
+.read-h h3{font:700 16px var(--serif);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.read-h .sp{flex:1}
+.read-b{padding:16px 18px 24px}
+.read-prob{white-space:pre-wrap;line-height:2.1;font-size:14.5px;border-left:3px solid var(--flag);padding:2px 0 2px 12px;margin-bottom:14px}
+.read .sol h5{font-size:14.5px;padding:10px 14px}
+.read .eq-b{font-size:15px;padding:8px 16px}
+.read .eq-t{font-size:12.5px;padding:15px 12px 0}
+
+/* ================= V3：画面结构 ================= */
+.cfg-g{display:flex;gap:8px;align-items:center;min-width:0}
+.cfg-g.grow{flex:1 1 340px;max-width:600px}
+.cfg-g+.cfg-g,.cfgbar .sp+.cfg-g{padding-left:10px;border-left:1px solid var(--line)}
+.simgrid{grid-template-columns:304px minmax(0,1fr) clamp(350px,27vw,430px)}
+.stage{padding:0;overflow:hidden}
+.stage-bar{padding:10px 12px 8px;margin:0}
+.stage .canvasWrap{border-radius:0;border-left:0;border-right:0}
+.tgls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+.tgl{position:relative;display:inline-flex;cursor:pointer}
+.tgl input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.tgl span{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 11px 4px 24px;font-size:12px;line-height:1.5;color:var(--ink2);position:relative;white-space:nowrap}
+.tgl span::before{content:"";position:absolute;left:9px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:#cfc7b6}
+.tgl input:checked+span{border-color:var(--navy);color:var(--ink);background:#f1f4fa}
+.tgl input:checked+span::before{background:#2f9e44}
+.tgl input:focus-visible+span{outline:2px solid var(--flag);outline-offset:2px}
+.transport{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:6px 12px;align-items:center;padding:10px 12px 2px}
+.tp-btns{display:flex;gap:4px;align-items:center}
+.ib{width:34px;height:34px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;display:grid;place-items:center;color:var(--ink2);padding:0}
+.ib:hover{border-color:#b9ae97;color:var(--ink)}
+.ib svg{width:15px;height:15px;fill:currentColor}
+.tp-line{min-width:0}
+.tp-line .timeline{margin:6px 0 0}
+.tp-time{font:600 12px var(--mono);color:var(--ink2);white-space:nowrap;text-align:right;min-width:104px}
+.transport select{height:34px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 4px}
+.phasechips{display:flex;gap:2px;overflow:visible;margin:4px 8px 0;padding:0}
+.phasechips button{flex:1 1 0;min-width:10px;height:18px;border:0;border-radius:4px;background:#ebe4d4;color:var(--ink2);font:600 10px/18px var(--sans);padding:0;text-align:center;overflow:hidden;cursor:pointer;white-space:nowrap}
+.phasechips button:nth-child(even){background:#ded5c1}
+.phasechips button:hover{filter:brightness(.95)}
+.phasechips button.on{background:var(--flag);color:#fff;border:0}
+.stage .bmbar{margin:10px 12px 0}
+.fold{margin:10px 12px 12px;border-top:1px dashed var(--line2);padding-top:8px}
+.fold summary{cursor:pointer;font-size:12px;color:var(--ink2);letter-spacing:.1em;list-style:none;display:flex;align-items:center;gap:7px;user-select:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::before{content:"";border-left:6px solid var(--ink3);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+.fold[open] summary::before{transform:rotate(90deg)}
+.fold .stats{margin-top:8px}
+.stage .forcebox{margin:0 12px 12px}
+#infoCard .tabs{position:sticky;top:0;z-index:3;background:var(--paper);margin:-14px -14px 12px;padding:6px 10px 0}
+#infoTabs button{flex:1;padding:9px 4px;text-align:center}
+.mtabs{display:none;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.mtabs button{flex:1;border:0;background:none;padding:10px 6px;cursor:pointer;color:var(--ink2)}
+.mtabs button.on{background:var(--navy);color:#fff}
+@media (max-width:1200px){
+  .simgrid{grid-template-columns:300px minmax(0,1fr)}
+}
+@media (max-width:820px){
+  .simgrid{grid-template-columns:minmax(0,1fr)}
+  .mtabs{display:flex}
+  #simGrid[data-m="param"] #chartCard,#simGrid[data-m="param"] #infoCard,
+  #simGrid[data-m="chart"] #paramCard,#simGrid[data-m="chart"] #infoCard,
+  #simGrid[data-m="info"] #paramCard,#simGrid[data-m="info"] #chartCard{display:none}
+  .transport{grid-template-columns:auto minmax(0,1fr) auto}
+  .tp-line{grid-column:1/-1;order:3}
+  .tp-time{min-width:0}
+  .cfgbar{flex-wrap:nowrap;overflow-x:auto}
+  .cfgbar .btn{flex:none}
+  .cfg-g.grow{flex:none;max-width:none}
+  .cfgbar select{min-width:150px}
+  .cfgbar input[type=text]{min-width:130px}
+  .eqs{grid-template-columns:minmax(0,1fr)}
+  .eq-t{text-align:left;border-bottom:0;padding:8px 12px 0;background:none}
+  .read .eq-t{padding:10px 16px 0}
+}
+
 dialog.dlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(520px,calc(100vw - 24px));background:var(--paper);color:var(--ink);box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
 dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
 .dlg-b{padding:16px 18px}
@@ -248,16 +359,22 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
 </header>
 
 <div class="cfgbar">
-  <label for="cfgSel">配置</label>
-  <select id="cfgSel" aria-label="选择配置"></select>
-  <input type="text" id="cfgName" aria-label="配置名称" placeholder="配置名称">
-  <button class="btn pri" id="btnNew">＋ 新建配置</button>
-  <button class="btn" id="btnDup">复制</button>
-  <button class="btn" id="btnDel">删除</button>
+  <div class="cfg-g grow">
+    <label for="cfgSel">配置</label>
+    <select id="cfgSel" aria-label="选择配置"></select>
+    <input type="text" id="cfgName" aria-label="配置名称" placeholder="配置名称">
+  </div>
+  <div class="cfg-g">
+    <button class="btn pri" id="btnNew">＋ 新建配置</button>
+    <button class="btn" id="btnDup">复制</button>
+    <button class="btn" id="btnDel">删除</button>
+  </div>
   <span class="sp"></span>
-  <button class="btn" id="btnImport">导入备份</button>
-  <button class="btn" id="btnExport">导出备份 .json</button>
-  <button class="btn" id="btnPage">导出本配置网页 .html</button>
+  <div class="cfg-g">
+    <button class="btn" id="btnImport">导入备份</button>
+    <button class="btn" id="btnExport">导出备份 .json</button>
+    <button class="btn" id="btnPage">导出本配置网页 .html</button>
+  </div>
   <input type="file" id="fileImport" accept=".json,application/json" hidden>
 </div>
 
@@ -265,7 +382,7 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
 
 <!-- ================= 模拟 ================= -->
 <section class="view on" id="view-sim">
-  <div class="simgrid">
+  <div class="simgrid" id="simGrid" data-m="chart">
     <aside class="card side" id="paramCard">
       <div class="card-h"><h3>参数设置</h3><span class="sp"></span><span class="muted">可输入 √3/3、π/6、3/8</span></div>
       <div class="seg" id="modelSeg"><button data-model="belt">传送带</button><button data-model="board">板块</button><button data-model="duo">多物块碰撞</button></div>
@@ -284,42 +401,56 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
     </aside>
 
     <div class="center">
-      <div class="card stage">
+      <!-- 动画区：标题与显示开关 → 画面 → 播放条（按钮｜时间轴 + 过程轨道｜时刻｜倍速）→ 书签 → 实时数据 -->
+      <div class="card stage" id="stageCard">
+        <div class="card-h stage-bar"><h3>动画演示</h3><span class="muted" id="stageSub"></span>
+          <div class="tgls">
+            <label class="tgl"><input type="checkbox" id="chkVec" checked><span>速度矢量</span></label>
+            <label class="tgl"><input type="checkbox" id="chkForce"><span>力学分析</span></label>
+            <label class="tgl"><input type="checkbox" id="chkStep"><span>分过程暂停</span></label>
+            <button class="btn mini" id="btnShot" title="把当前画面保存为 PNG 图片">保存画面</button>
+          </div>
+        </div>
         <div class="canvasWrap"><canvas id="scene" aria-label="模拟动画"></canvas></div>
-        <div class="timeline"><div class="ticks" id="tlTicks"></div><input type="range" id="tl" min="0" max="1000" value="0" aria-label="时间轴"></div>
-        <div class="ctrl">
-          <button class="btn" id="btnReset" title="回到起点">回到起点</button>
-          <button class="btn" id="btnPrev">上一过程</button>
-          <button class="btn pri" id="btnPlay" style="min-width:86px">播放</button>
-          <button class="btn" id="btnNext">下一过程</button>
+        <div class="transport">
+          <div class="tp-btns">
+            <button class="ib" id="btnReset" title="回到起点" aria-label="回到起点"><svg viewBox="0 0 16 16"><path d="M3 2.5h2v11H3zM13.5 2.5v11L6 8z"/></svg></button>
+            <button class="ib" id="btnPrev" title="上一过程" aria-label="上一过程"><svg viewBox="0 0 16 16"><path d="M8 3v10L2 8zM14.5 3v10l-6-5z"/></svg></button>
+            <button class="btn pri" id="btnPlay" style="min-width:86px">播放</button>
+            <button class="ib" id="btnNext" title="下一过程" aria-label="下一过程"><svg viewBox="0 0 16 16"><path d="M8 3v10l6-5zM1.5 3v10l6-5z"/></svg></button>
+          </div>
+          <div class="tp-line">
+            <div class="timeline"><div class="ticks" id="tlTicks"></div><input type="range" id="tl" min="0" max="1000" value="0" aria-label="时间轴"></div>
+            <div class="phasechips" id="phaseChips" aria-label="过程分段（宽度与时长成正比，点击跳转）"></div>
+          </div>
+          <output class="tp-time" id="tNow">t = 0 s</output>
           <select id="selSpeed" aria-label="播放速度"><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
-          <label class="chk"><input type="checkbox" id="chkStep"> 分过程暂停</label>
-          <label class="chk"><input type="checkbox" id="chkVec" checked> 显示矢量</label>
-          <label class="chk"><input type="checkbox" id="chkForce"> 力学分析</label>
-          <button class="btn" id="btnShot">保存画面 PNG</button>
         </div>
         <div class="bmbar" id="bmBar" aria-label="时刻书签"></div>
-        <div class="phasechips" id="phaseChips"></div>
-        <div class="stats" id="stats"></div>
+        <details class="fold" open><summary>实时数据</summary><div class="stats" id="stats"></div></details>
         <div class="forcebox" id="forceBox" hidden></div>
       </div>
 
-      <div class="card">
-        <div class="card-h"><h3>实时图表</h3><div class="chips" id="chartChips"></div><span class="sp"></span>
-          <label class="chk"><input type="checkbox" id="chkLink" checked> 多图联动</label>
-          <label class="chk"><input type="checkbox" id="chkFull" checked> 预显完整曲线</label>
+      <!-- 仅窄屏显示：在 参数 / 图表 / 分析 三块之间切换，动画始终在上方 -->
+      <div class="mtabs" id="mTabs"><button data-m="param">参数</button><button data-m="chart" class="on">图表</button><button data-m="info">分析</button></div>
+
+      <div class="card" id="chartCard">
+        <div class="card-h"><h3>实时图表</h3><span class="sp"></span>
+          <label class="tgl"><input type="checkbox" id="chkLink" checked><span>多图联动</span></label>
+          <label class="tgl"><input type="checkbox" id="chkFull" checked><span>预显完整曲线</span></label>
           <button class="btn mini" id="btnCSV">导出数据 CSV</button></div>
+        <div class="chips" id="chartChips" style="margin-bottom:10px"></div>
         <div class="chartGrid" id="chartGrid"></div>
         <p class="note">多图联动：在任意一张图上移动鼠标（或手指横向拖动），动画、数据面板和其余图表会同步到该时刻；红色竖线为当前时刻，竖直虚线为过程分界。</p>
       </div>
     </div>
 
     <aside class="card side" id="infoCard">
-      <div class="tabs" id="infoTabs"><button data-tab="phase" class="on">分过程</button><button data-tab="solve">解题过程</button><button data-tab="measure">测量</button><button data-tab="result">结果</button><button data-tab="flag">红旗 · 痕迹 · Q</button><button data-tab="prob">题目</button></div>
+      <div class="tabs" id="infoTabs"><button data-tab="phase" class="on" title="分过程说明">过程</button><button data-tab="solve" title="解题过程（公式推导）">解题</button><button data-tab="measure" title="任意时刻测量">测量</button><button data-tab="result" title="结果汇总">结果</button><button data-tab="flag" title="红旗 · 痕迹 · 摩擦生热">红旗</button><button data-tab="prob" title="题目与导出 Word">题目</button></div>
       <div class="pane on" id="pane-phase"><div id="phaseList"></div></div>
       <div class="pane" id="pane-result"><div id="resultBox"></div></div>
       <div class="pane" id="pane-solve">
-        <div class="row" style="margin-top:0"><button class="btn mini pri" id="solFill">填入“解析”栏</button><button class="btn mini" id="solCopy">复制全文</button></div>
+        <div class="row" style="margin-top:0"><button class="btn mini pri" id="solRead">大屏阅读</button><button class="btn mini" id="solFill">填入“解析”栏</button><button class="btn mini" id="solCopy">复制全文</button></div>
         <div id="solBox"></div>
         <p class="note">解题过程由模拟结果自动生成：牛顿第二定律 → 运动学 → 动能定理 / 能量守恒 / 动量。</p>
       </div>
@@ -489,6 +620,11 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
     <label class="fld"><span>起始模板</span><select id="newPreset"></select></label>
     <div class="dlg-f"><button type="button" class="btn" id="newCancel">取消</button><button class="btn pri" id="newOk" value="ok">创建</button></div>
   </form>
+</dialog>
+
+<dialog class="dlg read" id="dlgRead">
+  <div class="read-h"><h3 id="readTitle"></h3><span class="sp"></span><button class="btn mini" id="readWord">导出 Word</button><button class="btn mini pri" id="readClose">关闭</button></div>
+  <div class="read-b" id="readBody"></div>
 </dialog>
 
 <dialog class="dlg" id="dlgProv">
@@ -1350,7 +1486,7 @@ function updateHints(inp) {
     const s = String(cfg.params[p.key] || '').trim(), v = inp.P[p.key]; let tip = p.hint || '';
     if (p.kind === 'angle' && isFinite(v) && inp.ok) tip = '= ' + nfix(v, 3) + '°，sinθ = ' + fmt(inp.P.sin) + '，cosθ = ' + fmt(inp.P.cos);
     else if (s !== '' && isFinite(v) && !/^-?\d+(\.\d+)?$/.test(s)) tip = '= ' + nfix(v, 4) + (p.hint ? ' · ' + p.hint : '');
-    h.textContent = tip;
+    h.innerHTML = mathText(tip);
   });
 }
 function recompute() {
@@ -1368,19 +1504,21 @@ function renderPhases() {
   const sim = App.sim, chips = $('#phaseChips'), list = $('#phaseList'), ticks = $('#tlTicks');
   if (!sim) { chips.innerHTML = ''; ticks.innerHTML = ''; list.innerHTML = '<p class="muted">参数有误，暂无模拟结果。</p>'; return; }
   if (!sim.segs.length) { chips.innerHTML = ''; ticks.innerHTML = ''; list.innerHTML = '<p class="muted">物块在 t = 0 时已处于边缘并向外运动，立即离开。请检查初始位置与速度方向。</p>'; return; }
-  chips.innerHTML = sim.segs.map((g, i) => '<button data-i="' + i + '" title="' + esc(sim.phases[i].title) + '">过程 ' + (i + 1) + '<small>' + nfix(g.t0, 2) + '–' + nfix(g.t1, 2) + ' s</small></button>').join('');
+  $('#stageSub').textContent = MODELS[App.cfg.model].name;
+  // 过程轨道：每段宽度与时长成正比，与上方时间轴对齐
+  chips.innerHTML = sim.segs.map((g, i) => '<button data-i="' + i + '" style="flex-grow:' + Math.max(g.t1 - g.t0, sim.tEnd * 0.02).toFixed(4) + '" title="过程 ' + (i + 1) + '（' + nfix(g.t0, 2) + '–' + nfix(g.t1, 2) + ' s）：' + esc(sim.phases[i].title) + '" aria-label="跳到过程 ' + (i + 1) + '">' + (i + 1) + '</button>').join('');
   ticks.innerHTML = sim.segs.slice(0, -1).map(g => '<i style="left:' + (g.t1 / sim.tEnd * 100).toFixed(3) + '%"></i>').join('');
   list.innerHTML = sim.segs.map((g, i) => {
     const d = sim.phases[i];
-    return '<article class="ph" data-i="' + i + '"><header><b>过程 ' + (i + 1) + '</b><span>' + esc(fmt(g.t0)) + ' s → ' + esc(fmt(g.t1)) + ' s</span><button class="btn mini" data-play="' + i + '">播放此过程</button></header>' +
-      '<h5>' + esc(d.title) + '</h5><ul>' + d.lines.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul><footer>结束：' + esc(d.end) + '</footer></article>';
+    return '<article class="ph" data-i="' + i + '"><header><b class="ph-n">' + (i + 1) + '</b><span>' + mathText(fmt(g.t0) + ' s → ' + fmt(g.t1) + ' s') + '</span><button class="btn mini" data-play="' + i + '">播放此过程</button></header>' +
+      '<h5>' + esc(d.title) + '</h5><ul>' + d.lines.map(l => '<li>' + phaseLine(l) + '</li>').join('') + '</ul><footer>' + mathText('结束：' + d.end) + '</footer></article>';
   }).join('');
 }
 function renderResults() {
   const sim = App.sim, box = $('#resultBox');
   if (!sim) { box.innerHTML = '<p class="muted">暂无结果</p>'; return; }
   const S = sim.summary;
-  box.innerHTML = '<table class="kv"><tbody>' + resultRows(sim).map(r => '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>').join('') + '</tbody></table>' +
+  box.innerHTML = resultTiles(sim) + '<table class="kv"><tbody>' + resultRows(sim).map(r => '<tr><td>' + mathText(r[0]) + '</td><td>' + mathText(r[1]) + '</td></tr>').join('') + '</tbody></table>' +
     (!sim.duo && S.sRel - S.mark > 1e-6 ? '<div class="qbox" style="margin-top:10px">痕迹有重叠：痕迹长度 <b>' + esc(fmt(S.mark)) + ' m</b> 小于相对路程 <b>' + esc(fmt(S.sRel)) + ' m</b>。求 Q 要用相对路程。</div>' : '') +
     '<p class="note">带 “≈” 的结果同时给出了保留根号 / 分数的精确形式。</p>';
 }
@@ -1423,6 +1561,7 @@ function draw() {
   renderScene(ctx, fit.W, fit.H, sim, st, { flags: App.cfg.flags, showVec: App.showVec, forces: App.forces });
   renderForceBox(sim, st);
   $('#tl').value = sim.tEnd > 0 ? Math.round(App.t / sim.tEnd * 1000) : 0;
+  $('#tNow').textContent = 't = ' + App.t.toFixed(2) + ' / ' + nfix(sim.tEnd, 2) + ' s';
   for (const k of App.statKeys) { const el = document.getElementById('st_' + k); if (el) el.textContent = nfix(k === 'mark' ? st.rMax - st.rMin : st[k], 3); }
   if (st.i !== App.lastPhase) { App.lastPhase = st.i; $$('#phaseChips button').forEach((b, i) => b.classList.toggle('on', i === st.i)); $$('#phaseList .ph').forEach((b, i) => b.classList.toggle('on', i === st.i)); }
   $$('#chartGrid .chart').forEach(fig => {
@@ -1803,7 +1942,7 @@ function localParse(text) {
 /* —— 功能 B：一致性校验 —— */
 const ST_BADGE = { pass: ['ok', '通过'], warn: ['warn', '注意'], fail: ['bad', '不通过'], info: ['info', '提示'] };
 function renderChecks(box, list) {
-  box.innerHTML = list.map(c => { const s = ST_BADGE[c.status] || ST_BADGE.info; return '<div class="chkitem"><span class="badge ' + s[0] + '" style="margin:2px 0 0">' + s[1] + '</span><b>' + esc(c.item) + '</b><div class="d">' + esc(c.detail || '') + '</div></div>'; }).join('') || '<p class="muted">无检查项</p>';
+  box.innerHTML = list.map(c => { const s = ST_BADGE[c.status] || ST_BADGE.info; return '<div class="chkitem"><span class="badge ' + s[0] + '" style="margin:2px 0 0">' + s[1] + '</span><b>' + mathText(c.item) + '</b><div class="d">' + mathText(c.detail || '') + '</div></div>'; }).join('') || '<p class="muted">无检查项</p>';
 }
 /* 同一次模拟的本地校验结果只算一次（含 2 万步交叉验证，避免重复计算） */
 function cachedChecks() { if (!App.sim._checks) App.sim._checks = localChecks(App.inp, App.sim); return App.sim._checks; }
@@ -2102,7 +2241,7 @@ function measureRows(sim, st) {
 function renderMeasure() {
   const sim = App.sim, out = $('#msOut'), q = $('#msQ');
   if (!sim) { out.innerHTML = '<p class="muted">当前参数有误，无法测量。</p>'; return; }
-  const n = nm(sim), old = q.value, kv = rows => '<table class="kv"><tbody>' + rows.map(r => '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>').join('') + '</tbody></table>';
+  const n = nm(sim), old = q.value, kv = rows => '<table class="kv"><tbody>' + rows.map(r => '<tr><td>' + mathText(r[0]) + '</td><td>' + mathText(r[1]) + '</td></tr>').join('') + '</tbody></table>';
   q.innerHTML = [['vb', n.A + ' 速度'], ['sb', n.A + ' 位移'], ['xb', n.A + ' 位置'], ['vc', n.C + ' 速度'], ['sc', n.C + ' 位移'], ['vr', '相对速度'], ['dRel', '相对位移'], ['Q1', sim.duo ? 'A 的摩擦生热' : '摩擦生热 Q']].map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('');
   if (old) q.value = old;
   const t1 = evalTime($('#msT').value), t2 = evalTime($('#msT2').value);
@@ -2135,78 +2274,8 @@ function findTimes(sim, key, val) {
 function fx(v) { if (v == null || !isFinite(v)) return '—'; const r = Math.round(v * 1e4) / 1e4; if (Math.abs(v - r) < 1e-9 * Math.max(1, Math.abs(v))) return nfix(r, 4); return exactForm(v) || nfix(v, 3); }
 function par(v) { return v < 0 ? '(' + fx(v) + ')' : fx(v); }
 function termStr(terms, numeric) { const s = terms.map(tm => (tm[1] < 0 ? '− ' : '+ ') + (numeric ? fx(Math.abs(tm[1])) : tm[0])).join(' ').replace(/^\+ /, ''); return s || '0'; }
-function solutionSteps(sim) {
-  if (sim.duo) return duoSolution(sim);
-  const P = sim.P, S = sim.summary, steps = [], inc = P.sin > 1e-9, cosS = inc ? 'cosθ' : '', G = P.m * P.g, b = sim.isBelt, cn = b ? '传送带' : '木板', c = b ? '带' : '板';
-  steps.push({ title: '已知与约定', lines: ['正方向：' + (inc ? '沿斜面向上' : '水平向右') + '；最大静摩擦力等于滑动摩擦力。',
-    '物块对' + cn + '的压力 N = mg' + cosS + ' = ' + fx(G * P.cos) + ' N，滑动（最大静）摩擦力 f = μN = ' + fx(P.mu1 * G * P.cos) + ' N。']
-    .concat(b || P.mu2 === 0 ? [] : ['地面对木板的最大摩擦力 f地 = μ₂(M + m)g' + cosS + ' = ' + fx(P.mu2 * (P.M + P.m) * P.g * P.cos) + ' N。']) });
-  sim.segs.forEach((g, i) => {
-    const dt = g.t1 - g.t0, L = [], dxb = g.xb1 - g.xb0, dxc = g.xc1 - g.xc0, dxr = dxb - dxc, fsym = g.on ? (g.mode1 === 'static' ? 'f静' : 'f') : 'f地';
-    const tb = []; if (Math.abs(g.Fb) > 1e-12) tb.push(['F', g.Fb]); if (Math.abs(g.fb) > 1e-12) tb.push([fsym, g.fb]); if (inc) tb.push(['mg sinθ', -G * P.sin]);
-    L.push('物块（牛顿第二定律）：m·a物 = ' + termStr(tb) + '  ⇒  a物 = (' + termStr(tb, 1) + ') ÷ ' + fx(P.m) + ' = ' + fx(g.ab) + ' m/s²');
-    if (g.on && g.mode1 === 'static') L.push('　静摩擦力由“相对静止、加速度相同”反推：f静 = ' + fx(Math.abs(g.f1)) + ' N ≤ μN = ' + fx(P.mu1 * G * P.cos) + ' N，假设成立。');
-    if (b) L.push('传送带：' + (Math.abs(g.ac) > 1e-9 ? '以 a带 = ' + fx(g.ac) + ' m/s² 匀变速运行' : '以 v带 = ' + fx(g.vc0) + ' m/s 匀速运行'));
-    else {
-      const tc = []; if (Math.abs(g.Fc) > 1e-12) tc.push(['F板', g.Fc]); if (g.on && Math.abs(g.f1) > 1e-12) tc.push(['f′', -g.f1]); if (Math.abs(g.f2) > 1e-12) tc.push(['f地', g.f2]); if (inc) tc.push(['Mg sinθ', -P.M * P.g * P.sin]);
-      L.push('木板（牛顿第二定律）：M·a板 = ' + termStr(tc) + '  ⇒  a板 = (' + termStr(tc, 1) + ') ÷ ' + fx(P.M) + ' = ' + fx(g.ac) + ' m/s²');
-    }
-    if (g.end === 'common') L.push('共速条件 v物 = v' + c + '：' + fx(g.vb0) + ' + ' + par(g.ab) + 't = ' + fx(g.vc0) + ' + ' + par(g.ac) + 't  ⇒  Δt = ' + fx(dt) + ' s');
-    else if (g.end === 'blockStop') L.push('物块减速到零：0 = ' + fx(g.vb0) + ' + ' + par(g.ab) + 't  ⇒  Δt = ' + fx(dt) + ' s');
-    else if (g.end === 'boardStop') L.push('木板减速到零：0 = ' + fx(g.vc0) + ' + ' + par(g.ac) + 't  ⇒  Δt = ' + fx(dt) + ' s');
-    else if (g.end === 'leaveL' || g.end === 'leaveR') L.push('到达端点：由位移关系 ' + (b ? 'x物' : 'x物 − x板') + ' = v₀t + ½at² = ' + fx(b ? dxb : dxr) + ' m 解得 Δt = ' + fx(dt) + ' s');
-    else L.push('本过程历时 Δt = ' + fx(dt) + ' s（' + sim.phases[i].end + '）');
-    L.push('运动学：v物 = v₀ + aΔt = ' + fx(g.vb0) + ' + ' + par(g.ab) + '×' + fx(dt) + ' = ' + fx(g.vb0 + g.ab * dt) + ' m/s；x物 = v₀Δt + ½aΔt² = ' + fx(dxb) + ' m；x' + c + ' = ' + fx(dxc) + ' m');
-    if (g.on) L.push('相对位移 Δx = x物 − x' + c + ' = ' + fx(dxr) + ' m' + (g.mode1 === 'kinetic' ? '；本过程生热 Q = f·|Δx| = ' + fx(Math.abs(g.f1)) + ' × ' + fx(Math.abs(dxr)) + ' = ' + fx(Math.abs(g.f1 * dxr)) + ' J' : '（无相对滑动，不生热）'));
-    if (g.end !== 'steady' && g.end !== 'tmax') L.push('结束：' + sim.phases[i].end);
-    steps.push({ title: '过程 ' + (i + 1) + '（' + fx(g.t0) + ' s → ' + fx(g.t1) + ' s）：' + sim.phases[i].title, lines: L });
-  });
-  const E = [];
-  E.push('摩擦生热：Q = Σ f·s相对 = ' + fx(S.Q1) + ' J（相对路程 ' + fx(S.sRel) + ' m，痕迹长度 ' + fx(S.mark) + ' m）');
-  E.push('动能定理（物块）：W摩擦 + W外力 + W重力 = ΔEk  ⇒  ' + par(S.Wf) + ' + ' + par(S.WFb) + ' + ' + par(-S.dEpb) + ' = ' + fx(S.dEkb) + ' J');
-  E.push('动量定理（物块）：I合 = mΔv = ' + fx(P.m) + ' × (' + fx(S.vb) + ' − ' + par(P.v0) + ') = ' + fx(P.m * (S.vb - P.v0)) + ' N·s');
-  if (b) E.push('能量守恒（电动机多消耗的电能）：W电 = ΔEk + ΔEp + Q = ' + par(S.dEkb) + ' + ' + par(S.dEpb) + ' + ' + fx(S.Q1) + ' = ' + fx(S.Wbelt) + ' J（也等于 Σ f·x带）');
-  else {
-    E.push('能量守恒（系统）：W外力 = ΔEk物 + ΔEk板 + ΔEp + Q + Q地  ⇒  ' + fx(S.WFb + S.WFc) + ' = ' + par(S.dEkb) + ' + ' + par(S.dEkc) + ' + ' + par(S.dEpb + S.dEpc) + ' + ' + fx(S.Q1) + ' + ' + fx(S.Q2) + ' J');
-    const p0 = P.m * P.v0 + P.M * P.boardV0, p1 = P.m * S.vb + P.M * S.vc, free = P.mu2 === 0 && !inc && P.Fb === 0 && P.Fc === 0 && S.tLeave == null;
-    E.push(free ? '动量守恒（地面光滑、无外力，系统合外力为零）：m·v₀ + M·V₀ = m·v + M·V  ⇒  ' + fx(p0) + ' = ' + fx(p1) + ' kg·m/s' + (S.tCommon != null ? '；共速时 v共 = (m·v₀ + M·V₀) ÷ (m + M) = ' + fx(p0 / (P.m + P.M)) + ' m/s' : '')
-      : '动量：系统受地面摩擦 / 外力 / 重力分力，合外力不为零，动量不守恒（初 ' + fx(p0) + ' → 末 ' + fx(p1) + ' kg·m/s），变化量等于合外力的冲量。');
-  }
-  steps.push({ title: '功能关系与动量', lines: E });
-  return steps;
-}
-function duoSolution(sim) {
-  const P = sim.P, S = sim.summary, steps = [], inc = P.sin > 1e-9, mode = P.collision;
-  steps.push({ title: '已知与约定', lines: ['正方向：' + (inc ? '沿斜面向上' : '水平向右') + '。A：mA = ' + fx(P.m) + ' kg，初速度 ' + fx(P.v0) + ' m/s，位置 ' + fx(sim.x0) + ' m；B：mB = ' + fx(P.M) + ' kg，初速度 ' + fx(P.vB0) + ' m/s，位置 ' + fx(sim.xc00) + ' m。',
-    '碰撞类型：' + ({ elastic: '弹性碰撞（动量守恒 + 机械能守恒）', stick: '完全非弹性碰撞（碰后粘在一起，只有动量守恒）', e: '非弹性碰撞（动量守恒，恢复系数 e = ' + fx(clamp(P.e, 0, 1)) + '）', none: '不发生碰撞，只研究追及与相遇' }[mode] || mode)] });
-  sim.segs.forEach((g, i) => {
-    const dt = g.t1 - g.t0, L = [];
-    const one = (sym, m, f, a, v0) => { const tm = []; if (Math.abs(f) > 1e-12) tm.push(['f' + sym, f]); if (inc) tm.push(['m' + sym + 'g sinθ', -m * P.g * P.sin]); return '物块 ' + sym + '：m' + sym + '·a' + sym + ' = ' + termStr(tm) + '  ⇒  a' + sym + ' = ' + fx(a) + ' m/s²；v' + sym + ' = ' + fx(v0) + ' + ' + par(a) + '×' + fx(dt) + ' = ' + fx(v0 + a * dt) + ' m/s'; };
-    if (g.stuck) L.push('A、B 作为整体：a = ' + fx(g.ab) + ' m/s²；v = ' + fx(g.vb0) + ' + ' + par(g.ab) + '×' + fx(dt) + ' = ' + fx(g.vb0 + g.ab * dt) + ' m/s');
-    else { L.push(one('A', P.m, g.f1, g.ab, g.vb0)); L.push(one('B', P.M, g.f2, g.ac, g.vc0)); }
-    if (g.end === 'hit' || g.end === 'meet') L.push((g.end === 'hit' ? '相碰' : '相遇') + '条件 xA = xB：' + fx(g.xb0) + ' + ' + par(g.vb0) + 't + ½×' + par(g.ab) + 't² = ' + fx(g.xc0) + ' + ' + par(g.vc0) + 't + ½×' + par(g.ac) + 't²  ⇒  Δt = ' + fx(dt) + ' s');
-    L.push('位移：xA = ' + fx(g.xb1 - g.xb0) + ' m，xB = ' + fx(g.xc1 - g.xc0) + ' m（历时 ' + fx(dt) + ' s）');
-    L.push('结束：' + sim.phases[i].end);
-    steps.push({ title: '过程 ' + (i + 1) + '（' + fx(g.t0) + ' s → ' + fx(g.t1) + ' s）：' + sim.phases[i].title, lines: L });
-  });
-  sim.collisions.slice(0, 6).forEach((c, k) => {
-    const L = ['动量守恒：mA·v₁ + mB·v₂ = mA·v₁′ + mB·v₂′，其中碰前总动量 = ' + fx(P.m) + '×' + par(c.u1) + ' + ' + fx(P.M) + '×' + par(c.u2) + ' = ' + fx(P.m * c.u1 + P.M * c.u2) + ' kg·m/s'];
-    if (mode === 'elastic') L.push('机械能守恒：½mA·v₁² + ½mB·v₂² = ½mA·v₁′² + ½mB·v₂′²（等价于 v₂′ − v₁′ = v₁ − v₂）');
-    else if (mode === 'stick') L.push('碰后共速：v₁′ = v₂′ = (mA·v₁ + mB·v₂) ÷ (mA + mB)');
-    else L.push('恢复系数：v₂′ − v₁′ = e(v₁ − v₂) = ' + fx(c.e) + '×' + par(c.u1 - c.u2));
-    L.push('联立解得 v₁′ = ' + fx(c.v1) + ' m/s，v₂′ = ' + fx(c.v2) + ' m/s');
-    L.push('机械能损失：ΔE = (½mA·v₁² + ½mB·v₂²) − (½mA·v₁′² + ½mB·v₂′²) = ' + fx(c.loss) + ' J');
-    steps.push({ title: '第 ' + (k + 1) + ' 次碰撞（t = ' + fx(c.t) + ' s，x = ' + fx(c.x) + ' m）', lines: L });
-  });
-  const Ek0 = 0.5 * P.m * P.v0 * P.v0 + 0.5 * P.M * P.vB0 * P.vB0, Ek1 = 0.5 * P.m * S.vb * S.vb + 0.5 * P.M * S.vc * S.vc, noF = P.mu1 === 0 && P.muB === 0 && !inc;
-  steps.push({ title: '能量与动量总览', lines: ['能量守恒：初动能 = 末动能 + Q摩擦 + ΔE碰撞 + ΔEp  ⇒  ' + fx(Ek0) + ' = ' + fx(Ek1) + ' + ' + fx(S.Q1 + S.Q2) + ' + ' + fx(S.Ecoll) + ' + ' + par(S.dEpb + S.dEpc) + ' J',
-    '系统动量：初 ' + fx(P.m * P.v0 + P.M * P.vB0) + ' → 末 ' + fx(P.m * S.vb + P.M * S.vc) + ' kg·m/s' + (noF ? '（合外力为零，全程守恒）' : '（碰撞瞬间守恒；有摩擦 / 重力分力时全程不守恒）')] });
-  return steps;
-}
-function solutionText(sim) { return solutionSteps(sim).map(s => '【' + s.title + '】\n' + s.lines.join('\n')).join('\n'); }
-function renderSolution() {
-  $('#solBox').innerHTML = App.sim ? solutionSteps(App.sim).map(s => '<div class="sol"><h5>' + esc(s.title) + '</h5>' + s.lines.map(l => '<p>' + esc(l) + '</p>').join('') + '</div>').join('') : '<p class="muted">当前参数有误，暂无解题过程。</p>';
-}
+/* 解题过程的生成（solutionSteps / duoSolution）与排版见下方 9c 节 */
+/* （旧版纯文本解题过程已由 9c 节的排版版本取代） */
 
 /* —— ⑥ 参数反求：把某个参数当未知量，由已知结果在范围内求解 —— */
 function refreshInverseForm() {
@@ -2328,6 +2397,178 @@ function bindExtra() {
   $('#chartGrid').addEventListener('pointerdown', scrub);
   $('#chartGrid').addEventListener('pointermove', e => { if (!App.linked) return; if (e.pointerType === 'mouse' ? (e.buttons > 0 || !App.playing) : true) scrub(e); });
   renderChat();
+}
+
+/* =====================================================================
+ * 9c. 公式排版（V3）
+ *   mrender(src,'t')：普通文字里的数值美化——分数竖排、根号加横线、“≈ 近似值”淡化、x物 / v带 / EkA 等下标
+ *   mrender(src,'f')：公式标记——变量斜体；_下标 ^上标（多字符用 {}）；{分子}//{分母}；#重点结果#
+ *   文本中用 $…$ 包住公式，richLine() 负责混排；plainMath() 还原为纯文本（Word / 复制用）
+ * ===================================================================== */
+const SUBD = '₀₁₂₃₄₅₆₇₈₉';
+const RX_PFRAC = /\(([^()]+)\)\/(\d+)(?![\d.A-Za-z])/y, RX_NUM = /(\d+(?:\.\d+)?)?√(\d+)|(\d+(?:\.\d+)?)(π?)|π/y, RX_DEN = /\/(\d+)(?![\d.A-Za-z])/y,
+  RX_APX = /≈\s*-?\d+(?:\.\d+)?/y, RX_FN = /sin|cos|tan/y, RX_GRP = /[\u4e00-\u9fa5]+|[A-Za-z0-9]+|[\s\S]/y,
+  RX_VAR = /([xvafFQWsI])(相对|物|板|带|共|静|地|合|电)|([xvamfQ])([AB])(?![A-Za-z])|(E)([kp])(物|板|A|B)?/y;
+function mFrac(a, b) { return '<span class="mf"><span>' + a + '</span><span>' + b + '</span></span>'; }
+function mRoot(a) { return '<span class="mr">√<span class="mr-b">' + a + '</span></span>'; }
+function mrender(src, mode) {
+  const s = String(src == null ? '' : src), F = mode === 'f', n = s.length; let i = 0, out = '', res = false, m;
+  const at = re => { re.lastIndex = i; return re.exec(s); };
+  const brace = () => { let d = 0, j = i; for (; j < n; j++) { if (s[j] === '{') d++; else if (s[j] === '}' && --d === 0) break; } const g = s.slice(i + 1, j); i = Math.min(j + 1, n); return g; };
+  const group = () => { if (s[i] === '{') return brace(); const g = at(RX_GRP); if (!g) return ''; i += g[0].length; return g[0]; };
+  while (i < n) {
+    const ch = s[i];
+    if (F && ch === '{') { const a = brace(); if (s.startsWith('//{', i)) { i += 2; const b = brace(); out += mFrac(mrender(a, mode), mrender(b, mode)); } else out += mrender(a, mode); continue; }
+    if (F && ch === '#') { res = !res; out += res ? '<b class="mres">' : '</b>'; i++; continue; }
+    if (F && (ch === '_' || ch === '^')) { i++; const g = group(), tg = ch === '_' ? 'sub' : 'sup'; out += '<' + tg + '>' + esc(g) + '</' + tg + '>'; continue; }
+    if (ch === '(' && (m = at(RX_PFRAC))) { out += mFrac(mrender(m[1], mode), m[2]); i += m[0].length; continue; }
+    if ((m = at(RX_NUM))) {
+      const pi = F ? '<i>π</i>' : 'π'; let html, dec = false;
+      if (m[2] != null) html = (m[1] || '') + mRoot(m[2]);
+      else if (m[3] != null) { html = m[3] + (m[4] ? pi : ''); dec = m[3].indexOf('.') >= 0; }
+      else html = pi;
+      i += m[0].length;
+      const d = dec ? null : at(RX_DEN);
+      if (d) { out += mFrac(html, d[1]); i += d[0].length; } else out += html;
+      continue;
+    }
+    if ((m = at(RX_APX))) { out += '<span class="apx">' + m[0] + '</span>'; i += m[0].length; continue; }
+    const sd = SUBD.indexOf(ch);
+    if (sd >= 0) { out += '<sub>' + sd + '</sub>'; i++; continue; }
+    if (ch === '½') { out += mFrac('1', '2'); i++; continue; }
+    if (ch === '⇒') { out += '<span class="marr">⇒</span>'; i++; continue; }
+    if (F) {
+      if ((m = at(RX_FN))) { out += '<span class="mfn">' + m[0] + '</span>'; i += m[0].length; continue; }
+      if (/[A-Za-zα-ω]/.test(ch)) { out += '<i>' + ch + '</i>'; i++; continue; }
+      if (ch === '-') { out += '−'; i++; continue; }
+    } else if (!/[A-Za-z]/.test(s[i - 1] || '') && (m = at(RX_VAR))) {
+      out += '<i class="mv">' + (m[1] || m[3] || m[5]) + '</i><sub>' + (m[2] || m[4] || (m[6] + (m[7] || ''))) + '</sub>'; i += m[0].length; continue;
+    }
+    out += esc(ch); i++;
+  }
+  return res ? out + '</b>' : out;
+}
+function mathText(s) { return mrender(s, 't'); }
+function richLine(s) { return String(s == null ? '' : s).split('$').map((seg, k) => k % 2 ? '<span class="math">' + mrender(seg, 'f') + '</span>' : mrender(seg, 't')).join(''); }
+function plainMath(s) {
+  const wrap = a => /[\s+−×]/.test(a) ? '(' + a + ')' : a;
+  return String(s == null ? '' : s).replace(/[$#]/g, '').replace(/([_^])\{([^{}]*)\}/g, (m, k, a) => k === '^' ? (a === '2' ? '²' : '^' + a) : (/^\d$/.test(a) ? SUBD[+a] : a))
+    .replace(/\{([^{}]*)\}\/\/\{([^{}]*)\}/g, (m, a, b) => wrap(a) + ' ÷ ' + wrap(b))
+    .replace(/_(\d)/g, (m, d) => SUBD[+d]).replace(/_/g, '').replace(/\^2/g, '²').replace(/\^/g, '');
+}
+function phaseLine(l) { const k = l.indexOf('：'); return k > 0 && k <= 6 ? '<b>' + esc(l.slice(0, k)) + '</b>' + mathText(l.slice(k + 1)) : mathText(l); }
+function resultTiles(sim) {
+  const S = sim.summary, none = sim.P.collision === 'none';
+  const T = sim.duo ? [['全过程时间', fmt(S.tEnd) + ' s'], [none ? '相遇次数' : '碰撞次数', String(none ? sim.meets.length : sim.collisions.length)], ['碰撞损失机械能', fmt(S.Ecoll) + ' J'], ['摩擦生热', fmt(S.Q1 + S.Q2) + ' J']]
+    : [['全过程时间', fmt(S.tEnd) + ' s'], ['摩擦生热 Q', fmt(S.Q1) + ' J'], ['相对路程', fmt(S.sRel) + ' m'], ['痕迹长度', fmt(S.mark) + ' m']];
+  return '<div class="tiles">' + T.map(t => '<div class="tile"><span>' + t[0] + '</span><b>' + mathText(t[1]) + '</b></div>').join('') + '</div>';
+}
+
+/* —— 解题过程 V3：每一步 = { tag 标签, tex 含 $公式$ 的文字 } —— */
+function solutionSteps(sim) {
+  if (sim.duo) return duoSolution(sim);
+  const P = sim.P, S = sim.summary, steps = [], inc = P.sin > 1e-9, cosS = inc ? ' cosθ' : '', G = P.m * P.g, b = sim.isBelt, cn = b ? '传送带' : '木板', c = b ? '带' : '板', mu = b ? 'μ' : 'μ_{1}';
+  const I0 = [{ tag: '约定', tex: '取' + (inc ? '沿斜面向上' : '水平向右') + '为正方向；最大静摩擦力等于滑动摩擦力。' },
+    { tag: '压力', tex: '$N = mg' + cosS + ' = ' + fx(G * P.cos) + '$ N' },
+    { tag: '摩擦力', tex: '$f = ' + mu + 'N = ' + fx(P.mu1) + ' × ' + fx(G * P.cos) + ' = #' + fx(P.mu1 * G * P.cos) + '#$ N（滑动摩擦力，也是最大静摩擦力）' }];
+  if (!b && P.mu2 !== 0) I0.push({ tag: '地面摩擦', tex: '$f_地 = μ_2(M + m)g' + cosS + ' = #' + fx(P.mu2 * (P.M + P.m) * P.g * P.cos) + '#$ N（最大值）' });
+  steps.push({ title: '已知与约定', items: I0 });
+  sim.segs.forEach((g, i) => {
+    const dt = g.t1 - g.t0, L = [], dxb = g.xb1 - g.xb0, dxc = g.xc1 - g.xc0, dxr = dxb - dxc, fsym = g.on ? (g.mode1 === 'static' ? 'f_静' : 'f') : 'f_地';
+    const tb = []; if (Math.abs(g.Fb) > 1e-12) tb.push(['F', g.Fb]); if (Math.abs(g.fb) > 1e-12) tb.push([fsym, g.fb]); if (inc) tb.push(['mg sinθ', -G * P.sin]);
+    L.push({ tag: '物块', tex: tb.length ? '$m·a_物 = ' + termStr(tb) + '$ ⇒ $a_物 = {' + termStr(tb, 1) + '}//{' + fx(P.m) + '} = #' + fx(g.ab) + '#$ m/s²' : '沿接触面方向合力为零，$a_物 = #0#$' });
+    if (g.on && g.mode1 === 'static') L.push({ tag: '静摩擦', tex: '与' + cn + '相对静止、加速度相同，反推 $f_静 = ' + fx(Math.abs(g.f1)) + '$ N ≤ $' + mu + 'N = ' + fx(P.mu1 * G * P.cos) + '$ N，假设成立。' });
+    if (b) L.push({ tag: '传送带', tex: Math.abs(g.ac) > 1e-9 ? '匀变速运行，$a_带 = ' + fx(g.ac) + '$ m/s²' : '匀速运行，$v_带 = ' + fx(g.vc0) + '$ m/s' });
+    else {
+      const tc = []; if (Math.abs(g.Fc) > 1e-12) tc.push(['F_板', g.Fc]); if (g.on && Math.abs(g.f1) > 1e-12) tc.push(['f′', -g.f1]); if (Math.abs(g.f2) > 1e-12) tc.push(['f_地', g.f2]); if (inc) tc.push(['Mg sinθ', -P.M * P.g * P.sin]);
+      L.push({ tag: '木板', tex: tc.length ? '$M·a_板 = ' + termStr(tc) + '$ ⇒ $a_板 = {' + termStr(tc, 1) + '}//{' + fx(P.M) + '} = #' + fx(g.ac) + '#$ m/s²' : '沿接触面方向合力为零，$a_板 = #0#$' });
+    }
+    if (g.end === 'common') L.push({ tag: '共速', tex: '令 $v_物 = v_' + c + '$：$' + fx(g.vb0) + ' + ' + par(g.ab) + '·t = ' + fx(g.vc0) + ' + ' + par(g.ac) + '·t$ ⇒ $Δt = #' + fx(dt) + '#$ s' });
+    else if (g.end === 'blockStop') L.push({ tag: '减速到零', tex: '令 $v_物 = 0$：$0 = ' + fx(g.vb0) + ' + ' + par(g.ab) + '·t$ ⇒ $Δt = #' + fx(dt) + '#$ s' });
+    else if (g.end === 'boardStop') L.push({ tag: '减速到零', tex: '令 $v_板 = 0$：$0 = ' + fx(g.vc0) + ' + ' + par(g.ac) + '·t$ ⇒ $Δt = #' + fx(dt) + '#$ s' });
+    else if (g.end === 'leaveL' || g.end === 'leaveR') L.push({ tag: '到达端点', tex: '$' + (b ? 'x_物' : 'x_物 − x_板') + ' = v_{0}t + ½at^2 = ' + fx(b ? dxb : dxr) + '$ m ⇒ $Δt = #' + fx(dt) + '#$ s' });
+    else L.push({ tag: '历时', tex: '$Δt = ' + fx(dt) + '$ s' });
+    L.push({ tag: '速度', tex: '$v_物 = v_0 + aΔt = ' + fx(g.vb0) + ' + ' + par(g.ab) + ' × ' + fx(dt) + ' = #' + fx(g.vb0 + g.ab * dt) + '#$ m/s' });
+    L.push({ tag: '位移', tex: '$x_物 = v_0Δt + ½aΔt^2 = #' + fx(dxb) + '#$ m，$x_' + c + ' = #' + fx(dxc) + '#$ m' });
+    if (g.on) {
+      L.push({ tag: '相对位移', tex: '$Δx = x_物 − x_' + c + ' = ' + fx(dxb) + ' − ' + par(dxc) + ' = #' + fx(dxr) + '#$ m' });
+      L.push({ tag: '生热', tex: g.mode1 === 'kinetic' ? '$Q = f·|Δx| = ' + fx(Math.abs(g.f1)) + ' × ' + fx(Math.abs(dxr)) + ' = #' + fx(Math.abs(g.f1 * dxr)) + '#$ J' : '无相对滑动，不生热。' });
+    }
+    L.push({ tag: '结束', tex: sim.phases[i].end });
+    steps.push({ title: '过程 ' + (i + 1) + '（' + fx(g.t0) + ' s → ' + fx(g.t1) + ' s）：' + sim.phases[i].title, items: L });
+  });
+  const E = [];
+  E.push({ tag: '摩擦生热', tex: '$Q = Σ f·s_相对 = #' + fx(S.Q1) + '#$ J（相对路程 $s_相对 = ' + fx(S.sRel) + '$ m，痕迹长度 ' + fx(S.mark) + ' m）' });
+  E.push({ tag: '动能定理', tex: '对物块：$W_f + W_F + W_G = ΔE_k$ ⇒ $' + par(S.Wf) + ' + ' + par(S.WFb) + ' + ' + par(-S.dEpb) + ' = #' + fx(S.dEkb) + '#$ J' });
+  E.push({ tag: '动量定理', tex: '对物块：$I_合 = mΔv = ' + fx(P.m) + ' × (' + fx(S.vb) + ' − ' + par(P.v0) + ') = #' + fx(P.m * (S.vb - P.v0)) + '#$ N·s' });
+  if (b) E.push({ tag: '能量守恒', tex: '电动机多消耗的电能：$W_电 = ΔE_k + ΔE_p + Q = ' + par(S.dEkb) + ' + ' + par(S.dEpb) + ' + ' + fx(S.Q1) + ' = #' + fx(S.Wbelt) + '#$ J（也等于 $Σ f·x_带$）' });
+  else {
+    E.push({ tag: '能量守恒', tex: '对系统：$W_F = ΔE_{k物} + ΔE_{k板} + ΔE_p + Q + Q_地$ ⇒ $' + fx(S.WFb + S.WFc) + ' = ' + par(S.dEkb) + ' + ' + par(S.dEkc) + ' + ' + par(S.dEpb + S.dEpc) + ' + ' + fx(S.Q1) + ' + ' + fx(S.Q2) + '$ J' });
+    const p0 = P.m * P.v0 + P.M * P.boardV0, p1 = P.m * S.vb + P.M * S.vc, free = P.mu2 === 0 && !inc && P.Fb === 0 && P.Fc === 0 && S.tLeave == null;
+    if (free) {
+      E.push({ tag: '动量守恒', tex: '地面光滑、无外力，系统合外力为零：$mv_0 + MV_0 = mv + MV$ ⇒ $' + fx(p0) + ' = ' + fx(p1) + '$ kg·m/s' });
+      if (S.tCommon != null) E.push({ tag: '共同速度', tex: '$v_共 = {mv_0 + MV_0}//{m + M} = {' + fx(p0) + '}//{' + fx(P.m + P.M) + '} = #' + fx(p0 / (P.m + P.M)) + '#$ m/s' });
+    } else E.push({ tag: '动量', tex: '系统受地面摩擦 / 外力 / 重力分力，合外力不为零，动量不守恒：$p$ 由 ' + fx(p0) + ' 变为 ' + fx(p1) + ' kg·m/s，变化量等于合外力的冲量。' });
+  }
+  steps.push({ title: '功能关系与动量', items: E });
+  return steps;
+}
+function duoSolution(sim) {
+  const P = sim.P, S = sim.summary, steps = [], inc = P.sin > 1e-9, mode = P.collision;
+  steps.push({ title: '已知与约定', items: [{ tag: '约定', tex: '取' + (inc ? '沿斜面向上' : '水平向右') + '为正方向。' },
+    { tag: '物块 A', tex: '$m_A = ' + fx(P.m) + '$ kg，$v_A = ' + fx(P.v0) + '$ m/s，$x_A = ' + fx(sim.x0) + '$ m' },
+    { tag: '物块 B', tex: '$m_B = ' + fx(P.M) + '$ kg，$v_B = ' + fx(P.vB0) + '$ m/s，$x_B = ' + fx(sim.xc00) + '$ m' },
+    { tag: '碰撞类型', tex: ({ elastic: '弹性碰撞（动量守恒 + 机械能守恒）', stick: '完全非弹性碰撞（碰后粘在一起，只有动量守恒）', e: '非弹性碰撞（动量守恒，恢复系数 $e = ' + fx(clamp(P.e, 0, 1)) + '$）', none: '不发生碰撞，只研究追及与相遇' }[mode] || mode) }] });
+  sim.segs.forEach((g, i) => {
+    const dt = g.t1 - g.t0, L = [];
+    const one = (sym, m, f, a) => { const tm = []; if (Math.abs(f) > 1e-12) tm.push(['f_' + sym, f]); if (inc) tm.push(['m_{' + sym + '}g sinθ', -m * P.g * P.sin]); return tm.length ? '$m_{' + sym + '}·a_' + sym + ' = ' + termStr(tm) + '$ ⇒ $a_' + sym + ' = {' + termStr(tm, 1) + '}//{' + fx(m) + '} = #' + fx(a) + '#$ m/s²' : '沿运动方向不受力，$a_' + sym + ' = #0#$'; };
+    if (g.stuck) L.push({ tag: '整体', tex: 'A、B 作为整体：$a = #' + fx(g.ab) + '#$ m/s²' });
+    else { L.push({ tag: 'A 受力', tex: one('A', P.m, g.f1, g.ab) }); L.push({ tag: 'B 受力', tex: one('B', P.M, g.f2, g.ac) }); }
+    if (g.end === 'hit' || g.end === 'meet') L.push({ tag: g.end === 'hit' ? '相碰条件' : '相遇条件', tex: '令 $x_A = x_B$：$' + fx(g.xb0) + ' + ' + par(g.vb0) + '·t + ½ × ' + par(g.ab) + '·t^2 = ' + fx(g.xc0) + ' + ' + par(g.vc0) + '·t + ½ × ' + par(g.ac) + '·t^2$ ⇒ $Δt = #' + fx(dt) + '#$ s' });
+    else L.push({ tag: '历时', tex: '$Δt = ' + fx(dt) + '$ s' });
+    L.push({ tag: '速度', tex: g.stuck ? '$v = ' + fx(g.vb0) + ' + ' + par(g.ab) + ' × ' + fx(dt) + ' = #' + fx(g.vb0 + g.ab * dt) + '#$ m/s'
+      : '$v_A = ' + fx(g.vb0) + ' + ' + par(g.ab) + ' × ' + fx(dt) + ' = #' + fx(g.vb0 + g.ab * dt) + '#$ m/s，$v_B = ' + fx(g.vc0) + ' + ' + par(g.ac) + ' × ' + fx(dt) + ' = #' + fx(g.vc0 + g.ac * dt) + '#$ m/s' });
+    L.push({ tag: '位移', tex: '$Δx_A = #' + fx(g.xb1 - g.xb0) + '#$ m，$Δx_B = #' + fx(g.xc1 - g.xc0) + '#$ m' });
+    L.push({ tag: '结束', tex: sim.phases[i].end });
+    steps.push({ title: '过程 ' + (i + 1) + '（' + fx(g.t0) + ' s → ' + fx(g.t1) + ' s）：' + sim.phases[i].title, items: L });
+  });
+  sim.collisions.slice(0, 6).forEach((c, k) => {
+    const L = [{ tag: '动量守恒', tex: '$m_{A}v_1 + m_{B}v_2 = m_{A}v_1′ + m_{B}v_2′$，碰前总动量 $p = ' + fx(P.m) + ' × ' + par(c.u1) + ' + ' + fx(P.M) + ' × ' + par(c.u2) + ' = ' + fx(P.m * c.u1 + P.M * c.u2) + '$ kg·m/s' }];
+    if (mode === 'elastic') L.push({ tag: '机械能守恒', tex: '$½m_{A}v_1^2 + ½m_{B}v_2^2 = ½m_{A}v_1′^2 + ½m_{B}v_2′^2$（等价于 $v_2′ − v_1′ = v_1 − v_2$）' });
+    else if (mode === 'stick') L.push({ tag: '碰后共速', tex: '$v_1′ = v_2′ = {m_{A}v_1 + m_{B}v_2}//{m_A + m_B}$' });
+    else L.push({ tag: '恢复系数', tex: '$v_2′ − v_1′ = e(v_1 − v_2) = ' + fx(c.e) + ' × ' + par(c.u1 - c.u2) + '$' });
+    L.push({ tag: '解得', tex: '$v_1′ = #' + fx(c.v1) + '#$ m/s，$v_2′ = #' + fx(c.v2) + '#$ m/s' });
+    L.push({ tag: '能量损失', tex: '$ΔE = E_{k前} − E_{k后} = #' + fx(c.loss) + '#$ J' });
+    steps.push({ title: '第 ' + (k + 1) + ' 次碰撞（t = ' + fx(c.t) + ' s，x = ' + fx(c.x) + ' m）', items: L });
+  });
+  const Ek0 = 0.5 * P.m * P.v0 * P.v0 + 0.5 * P.M * P.vB0 * P.vB0, Ek1 = 0.5 * P.m * S.vb * S.vb + 0.5 * P.M * S.vc * S.vc, noF = P.mu1 === 0 && P.muB === 0 && !inc;
+  steps.push({ title: '能量与动量总览', items: [
+    { tag: '能量守恒', tex: '$E_{k初} = E_{k末} + Q_摩擦 + ΔE_碰 + ΔE_p$ ⇒ $' + fx(Ek0) + ' = ' + fx(Ek1) + ' + ' + fx(S.Q1 + S.Q2) + ' + ' + fx(S.Ecoll) + ' + ' + par(S.dEpb + S.dEpc) + '$ J' },
+    { tag: '系统动量', tex: '初 ' + fx(P.m * P.v0 + P.M * P.vB0) + ' kg·m/s → 末 ' + fx(P.m * S.vb + P.M * S.vc) + ' kg·m/s' + (noF ? '（合外力为零，全程守恒）' : '（碰撞瞬间守恒；有摩擦 / 重力分力时全程不守恒）') }] });
+  return steps;
+}
+function solutionText(sim) { return solutionSteps(sim).map(s => '【' + plainMath(s.title) + '】\n' + s.items.map(it => (it.tag ? it.tag + '：' : '') + plainMath(it.tex)).join('\n')).join('\n'); }
+function solutionHTML(sim) {
+  return solutionSteps(sim).map((s, k) => '<section class="sol"><h5><span class="sol-n">' + (k + 1) + '</span><span>' + mathText(s.title) + '</span></h5><div class="eqs">' +
+    s.items.map(it => '<div class="eq-t">' + esc(it.tag || '') + '</div><div class="eq-b">' + richLine(it.tex) + '</div>').join('') + '</div></section>').join('');
+}
+function renderSolution() { $('#solBox').innerHTML = App.sim ? solutionHTML(App.sim) : '<p class="muted">当前参数有误，暂无解题过程。</p>'; }
+/* 大屏阅读：题干 + 答案 + 解题过程 */
+function openRead() {
+  if (!App.sim) { toast('当前参数有误，暂无解题过程', 'bad'); return; }
+  const pr = App.cfg.problem || {}, dlg = $('#dlgRead');
+  $('#readTitle').textContent = pr.title || App.cfg.name;
+  $('#readBody').innerHTML = (pr.text ? '<div class="read-prob">' + mathText(pr.text) + '</div>' : '') +
+    (pr.answer ? '<div class="qbox" style="margin-bottom:14px;white-space:pre-wrap;line-height:2.1">参考答案　' + mathText(pr.answer) + '</div>' : '') + solutionHTML(App.sim);
+  if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  dlg.scrollTop = 0;
+}
+function bindV3() {
+  $('#solRead').addEventListener('click', openRead);
+  $('#readClose').addEventListener('click', () => $('#dlgRead').close());
+  $('#readWord').addEventListener('click', () => exportWord([App.cfg], App.cfg.problem.title || App.cfg.name));
+  // 窄屏：参数 / 图表 / 分析 三块切换
+  $('#mTabs').addEventListener('click', e => { const b = e.target.closest('button[data-m]'); if (!b) return; $('#simGrid').dataset.m = b.dataset.m; $$('#mTabs button').forEach(x => x.classList.toggle('on', x === b)); App.dirty = true; });
 }
 
 function showView(v) {
@@ -2507,7 +2748,7 @@ function init() {
     if (same) App.store.currentId = same.id; else { App.store.configs.push(n); App.store.currentId = n.id; }
   }
   if (!App.store.configs.length) { const c = newConfig('belt', MODELS.belt.presets[2]); App.store.configs.push(c); App.store.currentId = c.id; }
-  AI.load(); bind(); bindExtra();
+  AI.load(); bind(); bindExtra(); bindV3();
   setCurrent(App.store.configs.find(c => c.id === App.store.currentId) || App.store.configs[0]);
   renderProviders(); renderPromptEditor(); updatePlayBtn();
   requestAnimationFrame(tick);
