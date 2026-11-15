@@ -340,6 +340,31 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
   .cfgbar .sp{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ================= V4：2D/3D · 视图工具 · 全屏 · 例题拼合 ================= */
+.canvasWrap{position:relative}
+#scene{cursor:grab}
+#scene:active{cursor:grabbing}
+#scene.free{touch-action:none}
+.vtools{position:absolute;right:8px;bottom:8px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 16px)}
+.vtools button{border:1px solid var(--line);background:rgba(255,253,248,.93);border-radius:7px;height:28px;min-width:30px;padding:0 9px;font-size:12px;line-height:1;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.vtools button:hover{border-color:#b9ae97;color:var(--ink)}
+.vtools button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.seg.mini{border-radius:99px;flex:none}
+.seg.mini button{flex:none;padding:3px 13px;font-size:12px;font-weight:600;line-height:1.5}
+.stage.fs{position:fixed;top:0;left:0;right:0;bottom:0;z-index:60;margin:0;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;overflow:auto}
+.stage.fs>*{flex-shrink:0}
+.stage.fs .canvasWrap{flex:1 1 0;min-height:220px}
+.stage.fs #scene{position:absolute;left:0;top:0;width:100%;height:100%}
+.stage.fs .forcebox{max-height:26vh;overflow:auto}
+body.fs-lock{overflow:hidden}
+.stg{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:start;border:1px solid var(--line2);border-radius:10px;background:#fff;padding:8px 10px;margin-bottom:8px}
+.stg.bad{border-color:#f3b4b0;background:#fff7f6}
+.stg-name{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stg-io{font-size:11.5px;color:var(--ink2);line-height:2}
+.stg select{grid-column:1/-1;width:100%;min-width:0;border:1px solid var(--line);border-radius:7px;background:#fff;padding:5px 6px;font-size:12px}
+.stg-act{grid-column:1/-1;display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+#paramCard[data-model="combo"] #modelSeg,#paramCard[data-model="combo"] #paramBox,#paramCard[data-model="combo"] .keypad,#paramCard[data-model="combo"] .opts,#paramCard[data-model="combo"]>.fld,#paramCard[data-model="combo"]>.note{display:none}
 </style>
 </head>
 <body>
@@ -367,6 +392,7 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
   <div class="cfg-g">
     <button class="btn pri" id="btnNew">＋ 新建配置</button>
     <button class="btn" id="btnDup">复制</button>
+    <button class="btn" id="btnCombo" title="把多个例题按顺序拼成一道多过程综合题">拼合例题</button>
     <button class="btn" id="btnDel">删除</button>
   </div>
   <span class="sp"></span>
@@ -385,9 +411,10 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
   <div class="simgrid" id="simGrid" data-m="chart">
     <aside class="card side" id="paramCard">
       <div class="card-h"><h3>参数设置</h3><span class="sp"></span><span class="muted">可输入 √3/3、π/6、3/8</span></div>
-      <div class="seg" id="modelSeg"><button data-model="belt">传送带</button><button data-model="board">板块</button><button data-model="duo">多物块碰撞</button></div>
+      <div class="seg" id="modelSeg"><button data-model="belt">传送带</button><button data-model="board">板块</button><button data-model="duo">碰撞相遇</button><button data-model="boat">人船</button></div>
       <label class="fld"><span>载入经典例题（会覆盖当前参数）</span><select id="presetSel"></select></label>
       <div id="errBanner" class="banner bad" hidden></div>
+      <div id="comboBox"></div>
       <div id="paramBox"></div>
       <div class="keypad" id="keypad" aria-label="符号快捷输入">
         <button data-ins="√">√</button><button data-ins="π">π</button><button data-ins="°">°</button><button data-ins="/">/</button><button data-ins="(">(</button><button data-ins=")">)</button><button data-ins="^">^</button><button data-ins="-">−</button><button data-ins="sin(">sin</button><button data-ins="tan(">tan</button>
@@ -405,13 +432,23 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
       <div class="card stage" id="stageCard">
         <div class="card-h stage-bar"><h3>动画演示</h3><span class="muted" id="stageSub"></span>
           <div class="tgls">
+            <div class="seg mini" id="dimSeg" role="group" aria-label="2D / 3D 视图切换"><button data-d="2" class="on">2D</button><button data-d="3">3D</button></div>
             <label class="tgl"><input type="checkbox" id="chkVec" checked><span>速度矢量</span></label>
             <label class="tgl"><input type="checkbox" id="chkForce"><span>力学分析</span></label>
             <label class="tgl"><input type="checkbox" id="chkStep"><span>分过程暂停</span></label>
             <button class="btn mini" id="btnShot" title="把当前画面保存为 PNG 图片">保存画面</button>
           </div>
         </div>
-        <div class="canvasWrap"><canvas id="scene" aria-label="模拟动画"></canvas></div>
+        <div class="canvasWrap"><canvas id="scene" aria-label="模拟动画"></canvas>
+          <div class="vtools" id="vTools" aria-label="视图工具">
+            <button data-v="drag" id="btnDrag" title="3D 视图下：切换“拖动旋转 / 拖动平移”" hidden>拖动：旋转</button>
+            <button data-v="in" title="放大" aria-label="放大">＋</button>
+            <button data-v="out" title="缩小" aria-label="缩小">－</button>
+            <button data-v="fit" title="复位视图，显示全部画面（也可双击画面）">全景</button>
+            <button data-v="follow" id="btnFollow" title="镜头跟随物块">跟随</button>
+            <button data-v="fs" id="btnFS" title="全屏 / 退出全屏（Esc）">全屏</button>
+          </div>
+        </div>
         <div class="transport">
           <div class="tp-btns">
             <button class="ib" id="btnReset" title="回到起点" aria-label="回到起点"><svg viewBox="0 0 16 16"><path d="M3 2.5h2v11H3zM13.5 2.5v11L6 8z"/></svg></button>
@@ -603,7 +640,7 @@ dialog.dlg::backdrop{background:rgba(20,24,34,.5)}
       <div class="tok" id="promptTok"></div>
       <p class="note">占位符：<code>{{SCHEMA}}</code> 配置结构说明、<code>{{PARAMS}}</code> 可扫描参数、<code>{{METRICS}}</code> 可观测指标，调用时自动替换。</p>
       <details class="note"><summary style="cursor:pointer;font-weight:600">二次开发 / 扩展说明</summary>
-        <p>源码按注册表组织：<code>MODELS</code>（模型与参数定义、例题）、<code>CHARTS</code>（图表）、<code>METRICS</code>（扫描指标）、<code>PROMPTS</code>（提示词）、<code>AI.PRESETS</code>（供应商预设）。新增一条记录即可出现在界面与 AI 提示词中；物理求解集中在 <code>solveContact()</code>、<code>simulate()</code>（传送带 / 板块）与 <code>simulateDuo()</code>（两物块碰撞相遇）。解题过程在 <code>solutionSteps()</code>，力学分析箭头在 <code>renderScene()</code> 的 <code>o.forces</code> 分支。</p>
+        <p>源码按注册表组织：<code>MODELS</code>（模型与参数定义、例题）、<code>CHARTS</code>（图表）、<code>METRICS</code>（扫描指标）、<code>PROMPTS</code>（提示词）、<code>AI.PRESETS</code>（供应商预设）。新增一条记录即可出现在界面与 AI 提示词中；物理求解集中在 <code>solveContact()</code>、<code>simulate()</code>（传送带 / 板块）与 <code>simulateDuo()</code>（两物块碰撞相遇）。解题过程在 <code>solutionSteps()</code>，力学分析箭头在 <code>renderScene()</code> 的 <code>o.forces</code> 分支。新模型可在 <code>MODELS</code> 条目里自带 <code>simulate / build / normalize / pack</code>，模拟结果对象可自带 <code>resultRows / checks / solution / render2D / infoBox / tiles / names</code> 等钩子（参考人船模型 <code>MODELS.boat</code> 与例题拼合 <code>MODELS.combo</code>）；3D 画法集中在 <code>render3D()</code>。</p>
       </details>
     </div>
   </div>
@@ -897,6 +934,7 @@ function normalizeConfig(raw) {
   if (Array.isArray(raw.bookmarks)) cfg.bookmarks = raw.bookmarks.filter(b => b && isFinite(+b.t)).map(b => ({ id: uid(), t: Math.max(0, +b.t), name: String(b.name || ('t = ' + b.t + ' s')).slice(0, 30) }));
   if (Array.isArray(raw.flags)) cfg.flags = raw.flags.filter(f => f && (f.anchor === 'ground' || f.anchor === 'carrier') && isFinite(+f.t)).map(f => ({ id: uid(), anchor: f.anchor, t: Math.max(0, +f.t) }));
   if (raw.problem && typeof raw.problem === 'object') ['title', 'text', 'answer', 'analysis'].forEach(k => { if (raw.problem[k] != null) cfg.problem[k] = String(raw.problem[k]); });
+  if (MODELS[modelId].normalize) MODELS[modelId].normalize(raw, cfg);
   if (!cfg.problem.title) cfg.problem.title = cfg.name;
   return cfg;
 }
@@ -914,10 +952,12 @@ function buildInput(cfg) {
       P[p.key] = v;
     } catch (e) { errors[p.key] = e.message; }
   }
+  if (P.theta == null && !errors.theta) P.theta = 0;   // 没有倾角参数的模型（人船、拼合）按水平处理
   if (!errors.theta && !(P.theta >= 0 && P.theta < 90)) errors.theta = '倾角需满足 0° ≤ θ < 90°';
   if (!errors.tMax && P.tMax > 600) errors.tMax = '最长 600 s';
   if (!errors.x0 && !errors.L && P.x0 > P.L + 1e-9) errors.x0 = '初始位置不能超过长度 L';
   if (cfg.model === 'duo' && !errors.xB0 && !errors.L && P.xB0 > P.L + 1e-9) errors.xB0 = '初始位置不能超过轨道长度 L';
+  if (M.build) M.build(cfg, P, errors);   // 模型自带的校验 / 预处理
   const ok = Object.keys(errors).length === 0;
   if (ok) {
     P.rad = P.theta * Math.PI / 180; P.sin = Math.sin(P.rad); P.cos = Math.cos(P.rad);
@@ -989,6 +1029,7 @@ function solveContact(P, S) {
 }
 
 function simulate(P) {
+  if (MODELS[P.model] && MODELS[P.model].simulate) return MODELS[P.model].simulate(P);   // 模型自带引擎（人船、例题拼合…）
   if (P.model === 'duo') return simulateDuo(P);   // 多物块碰撞模型走独立引擎
   const isBelt = P.model === 'belt', m = P.m, M = isBelt ? 0 : P.M, L = P.L, F1max = P.mu1 * m * P.g * P.cos;
   const ramp = isBelt && Math.abs(P.beltA) > EPS && Math.abs(P.beltV - P.beltV0) > EPS;
@@ -1079,6 +1120,7 @@ function simulate(P) {
   return sim;
 }
 function stateInSeg(sim, g, t) {
+  if (sim.stateInSeg) return sim.stateInSeg(g, t);   // 拼合模拟：转交给所属阶段
   const P = sim.P, d = clamp(t - g.t0, 0, g.t1 - g.t0);
   const xb = g.xb0 + g.vb0 * d + 0.5 * g.ab * d * d, vb = g.vb0 + g.ab * d, xc = g.xc0 + g.vc0 * d + 0.5 * g.ac * d * d, vc = g.vc0 + g.ac * d;
   const xr = xb - xc, dxr = xr - (g.xb0 - g.xc0), dxb = xb - g.xb0, dxc = xc - g.xc0;
@@ -1091,7 +1133,8 @@ function stateInSeg(sim, g, t) {
   st.Ekb = 0.5 * P.m * vb * vb; st.Ekc = sim.isBelt ? 0 : 0.5 * P.M * vc * vc;
   st.dEp = P.m * P.g * P.sin * st.sb + (sim.isBelt ? 0 : P.M * P.g * P.sin * st.sc);
   st.pb = P.m * vb; st.pc = sim.isBelt ? 0 : P.M * vc;
-  if (sim.duo) { st.rMin = 0; st.rMax = 0; }
+  if (sim.duo || sim.boat) { st.rMin = 0; st.rMax = 0; }
+  if (sim.boat) st.Q1 = 0;   // 人船：脚与船之间是静摩擦，不生热
   return st;
 }
 function stateAt(sim, t) {
@@ -1143,6 +1186,7 @@ function describeSeg(sim, g) {
 }
 const END_TEXT = { leave: '物块离开' , steady: '进入稳定状态（之后不再变化）', tmax: '达到最长模拟时间（过程可能未结束）', guard: '事件过多，已中止' };
 function resultRows(sim) {
+  if (sim.resultRows) return sim.resultRows(sim);
   if (sim.duo) return duoResultRows(sim);
   const S = sim.summary, P = sim.P, b = sim.isBelt, cn = b ? '传送带' : '木板', c = b ? '带' : '板', R = [];
   R.push(['结束情况', END_TEXT[sim.endReason] + (sim.endReason === 'leave' ? cn : '')]);
@@ -1192,6 +1236,7 @@ function crossCheck(sim) {   // 2 万步逐步积分，与解析分段解比对
   return { dev, tol: 0.01 * scale + 0.01, T };
 }
 function localChecks(inp, sim) {
+  if (sim.checks) return sim.checks(inp, sim);
   if (sim.duo) return duoChecks(inp, sim);
   const out = [], P = inp.P, b = sim.isBelt, S = sim.summary, add = (status, item, detail) => out.push({ status, item, detail });
   const w = [];
@@ -1305,20 +1350,23 @@ const CHARTS = [
 ];
 function chartSpec(def, sim, t, full) {
   const cn = sim.isBelt ? '传送带' : '木板', cur = stateAt(sim, t), get = (s, k) => typeof k === 'function' ? k(s) : s[k];
-  const series = def.series.filter(s => !(s.boardOnly && sim.isBelt)).map(s => {
+  const series = def.series.filter(s => !(s.boardOnly && sim.isBelt && !sim.combo)).map(s => {
     const all = sim.samples.map(p => [get(p, s.x), get(p, s.y)]), done = [];
     for (const p of sim.samples) { if (p.t <= t + 1e-9) done.push([get(p, s.x), get(p, s.y)]); else break; }
     const dot = [get(cur, s.x), get(cur, s.y)]; done.push(dot);
-    return { name: sim.duo ? (DUO_NAMES[s.n] || s.n) : s.n.replace('@', cn), color: s.c, pts: done, ghost: full ? all : null, range: all, dot };
+    return { name: sim.names ? (sim.names[s.n] || s.n) : sim.duo ? (DUO_NAMES[s.n] || s.n) : s.n.replace('@', cn), color: s.c, pts: done, ghost: full ? all : null, range: all, dot };
   });
   return { title: def.name, xLabel: def.xl, yLabel: def.yl, series, vlines: def.time ? sim.segs.slice(0, -1).map(g => g.t1) : null, cursor: def.time ? cur.t : null, readout: !!App.linked };
 }
 /* 场景动画 */
 function renderScene(ctx, W, H, sim, st, o) {
-  o = o || {}; const P = sim.P, b = sim.isBelt, th = P.rad, small = W < 480;
+  o = o || {};
+  if (o.mode === '3d') return render3D(ctx, W, H, sim, st, o);        // 3D 视图
+  if (sim.render2D) return sim.render2D(ctx, W, H, sim, st, o);        // 模型自带的 2D 画法（如人船模型）
+  const P = sim.P, b = sim.isBelt, th = P.rad, small = W < 480, vw = o.view || {};
   const span = Math.max(sim.xmax - sim.xmin, 1e-6), padX = small ? 28 : 54, padT = H * 0.4, padB = H * 0.17;
-  const s = Math.min((W - 2 * padX) / (span * Math.cos(th)), (H - padT - padB) / Math.max(span * Math.sin(th), 1e-9));
-  const cx = W / 2, cy = padT + (H - padT - padB) / 2, xmid = (sim.xmin + sim.xmax) / 2, X = x => (x - xmid) * s;
+  const s = (vw.zoom || 1) * Math.min((W - 2 * padX) / (span * Math.cos(th)), (H - padT - padB) / Math.max(span * Math.sin(th), 1e-9));
+  const cx = W / 2 + (vw.x || 0), cy = padT + (H - padT - padB) / 2 + (vw.y || 0), xmid = vw.follow ? st.xb : (sim.xmin + sim.xmax) / 2, X = x => (x - xmid) * s;
   const duo = !!sim.duo, bs = small ? 22 : 30, hB = (b || duo) ? 0 : (small ? 10 : 14), R = small ? 9 : 12, top = -hB;
   ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = 'rgba(70,90,130,.07)'; ctx.lineWidth = 1; ctx.beginPath();
@@ -1329,7 +1377,7 @@ function renderScene(ctx, W, H, sim, st, o) {
   ctx.save(); ctx.translate(cx, cy); ctx.rotate(-th);
   // 红旗位置
   const cnt = { ground: 0, carrier: 0 };
-  const flags = (o.flags || []).map(f => { const n = ++cnt[f.anchor]; if (f.t > st.t + 1e-9 || (duo && f.anchor === 'carrier')) return null; const fs = stateAt(sim, f.t); return { anchor: f.anchor, label: (f.anchor === 'ground' ? '地' : (b ? '带' : '板')) + n, x: f.anchor === 'ground' ? fs.xb : fs.xr + st.xc }; }).filter(Boolean);
+  const flags = (o.flags || []).map(f => { const n = ++cnt[f.anchor]; if (f.t > st.t + 1e-9 || (duo && f.anchor === 'carrier')) return null; const fs = peekState(sim, f.t); if (fs.stage !== st.stage) return null; return { anchor: f.anchor, label: (f.anchor === 'ground' ? '地' : (b ? '带' : '板')) + n, x: f.anchor === 'ground' ? fs.xb : fs.xr + st.xc }; }).filter(Boolean);
   const drawFlag = f => {
     const g = f.anchor === 'ground', x = X(f.x), y0 = g ? 0 : top, hh = g ? (small ? 44 : 54) + hB : (small ? 28 : 34), d = g ? 1 : -1;
     ctx.strokeStyle = g ? '#6b7280' : '#4a3520'; ctx.lineWidth = 2; ln(x, y0, x, y0 - hh);
@@ -1467,9 +1515,11 @@ function renderModelUI() {
   $('#optLeave').value = cfg.options.afterLeave || 'stop';
   $('#optLeaveWrap').hidden = cfg.model !== 'board';
   $('#optCollWrap').hidden = cfg.model !== 'duo'; $('#optColl').value = cfg.options.collision || 'elastic'; $('#btnFlagC').hidden = cfg.model === 'duo';
-  $('#btnFlagC').textContent = cfg.model === 'belt' ? '只插传送带旗' : '只插木板旗';
+  $('#btnFlagC').textContent = '只插' + (M.carrier || '载体') + '旗';
   const c = cfg.model === 'belt' ? '带' : '板';
-  const items = cfg.model === 'duo'
+  const items = cfg.model === 'boat'
+    ? [['t', 't', 's'], ['sb', 'x人', 'm'], ['vb', 'v人', 'm/s'], ['ab', 'a人', 'm/s²'], ['sc', 'x船', 'm'], ['vc', 'v船', 'm/s'], ['ac', 'a船', 'm/s²'], ['vr', 'v相对', 'm/s'], ['dRel', '人相对船', 'm'], ['fb', 'f人', 'N'], ['pb', 'p人', 'kg·m/s'], ['pc', 'p船', 'kg·m/s']]
+    : cfg.model === 'duo'
     ? [['t', 't', 's'], ['sb', 'xA', 'm'], ['vb', 'vA', 'm/s'], ['ab', 'aA', 'm/s²'], ['sc', 'xB', 'm'], ['vc', 'vB', 'm/s'], ['ac', 'aB', 'm/s²'], ['vr', 'vA−vB', 'm/s'], ['xr', 'xA−xB', 'm'], ['Q1', 'QA', 'J'], ['Q2', 'QB', 'J'], ['Ec', 'ΔE碰', 'J']]
     : [['t', 't', 's'], ['sb', 'x物', 'm'], ['vb', 'v物', 'm/s'], ['ab', 'a物', 'm/s²'], ['sc', 'x' + c, 'm'], ['vc', 'v' + c, 'm/s'], ['vr', 'v相对', 'm/s'], ['dRel', 'Δx相对', 'm'], ['sRel', 's相对', 'm'], ['mark', '痕迹长', 'm'], ['Q1', 'Q', 'J'], ['fb', 'f物', 'N']];
   $('#stats').innerHTML = items.map(i => '<div class="st"><span>' + i[1] + '</span><b id="st_' + i[0] + '">0</b><em>' + i[2] + '</em></div>').join('');
@@ -1493,9 +1543,9 @@ function recompute() {
   const cfg = App.cfg, inp = buildInput(cfg); App.inp = inp; updateHints(inp);
   const eb = $('#errBanner');
   if (inp.ok) { App.sim = simulate(inp.P); eb.hidden = true; }
-  else { eb.hidden = false; eb.textContent = '有 ' + Object.keys(inp.errors).length + ' 个参数填写有误，请按红色提示修改' + (App.sim ? '（下方仍显示上一次有效的模拟）' : '') + '。'; }
+  else { eb.hidden = false; eb.textContent = inp.errors._msg ? inp.errors._msg : '有 ' + Object.keys(inp.errors).length + ' 个参数填写有误，请按红色提示修改' + (App.sim ? '（下方仍显示上一次有效的模拟）' : '') + '。'; }
   App.t = 0; App.playing = false; App.stopAt = null; App.lastPhase = -1; updatePlayBtn();
-  renderPhases(); renderBookmarks(); renderResults(); renderSolution(); renderMeasure(); renderFlagList(); App.dirty = true; saveStore();
+  renderCombo(); renderPhases(); renderBookmarks(); renderResults(); renderSolution(); renderMeasure(); renderFlagList(); App.dirty = true; saveStore();
   document.title = cfg.name + ' · 板块/传送带模拟';
 }
 const scheduleRecompute = debounce(recompute, 140);
@@ -1558,7 +1608,7 @@ function draw() {
   const sim = App.sim, ctx = fit.ctx;
   if (!sim) { ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, fit.W, fit.H); ctx.fillStyle = '#8a93a6'; ctx.font = '14px ' + FONT; ctx.textAlign = 'center'; ctx.fillText('请先修正左侧标红的参数', fit.W / 2, fit.H / 2); return; }
   const st = stateAt(sim, App.t);
-  renderScene(ctx, fit.W, fit.H, sim, st, { flags: App.cfg.flags, showVec: App.showVec, forces: App.forces });
+  renderScene(ctx, fit.W, fit.H, sim, st, { flags: App.cfg.flags, showVec: App.showVec, forces: App.forces, mode: App.mode3d ? '3d' : '2d', view: App.view });
   renderForceBox(sim, st);
   $('#tl').value = sim.tEnd > 0 ? Math.round(App.t / sim.tEnd * 1000) : 0;
   $('#tNow').textContent = 't = ' + App.t.toFixed(2) + ' / ' + nfix(sim.tEnd, 2) + ' s';
@@ -1573,10 +1623,11 @@ function draw() {
   App.cfg.flags.forEach(f => {
     const el = document.getElementById('fd_' + f.id); if (!el) return;
     if (f.t > st.t + 1e-9) { el.textContent = '尚未插入'; return; }
-    const fs = stateAt(sim, f.t), fx = f.anchor === 'ground' ? fs.xb : fs.xr + st.xc;
+    const fs = peekState(sim, f.t); if (fs.stage !== st.stage) { el.textContent = '属于其他阶段'; return; }
+    const fx = f.anchor === 'ground' ? fs.xb : fs.xr + st.xc;
     el.textContent = '物块距此旗 ' + nfix(st.xb - fx, 3) + ' m';
   });
-  $('#qBox').innerHTML = sim.duo ? duoBox(sim, st) : '痕迹长度（物块在' + cn + '上划过的范围）= <b>' + nfix(st.rMax - st.rMin, 3) + ' m</b><br>相对路程 s<sub>相对</sub> = <b>' + nfix(st.sRel, 3) + ' m</b><br>此刻摩擦力 f = <b>' + nfix(Math.abs(st.fb), 3) + ' N</b><br>摩擦生热 Q = Σ f·s<sub>相对</sub> = <b>' + nfix(st.Q1, 3) + ' J</b>' + (st.sRel - (st.rMax - st.rMin) > 1e-6 ? '<br><span style="color:#a61e1e">痕迹已出现重叠：痕迹长度 &lt; 相对路程。</span>' : '');
+  $('#qBox').innerHTML = sim.infoBox ? sim.infoBox(st) : sim.duo ? duoBox(sim, st) : '痕迹长度（物块在' + cn + '上划过的范围）= <b>' + nfix(st.rMax - st.rMin, 3) + ' m</b><br>相对路程 s<sub>相对</sub> = <b>' + nfix(st.sRel, 3) + ' m</b><br>此刻摩擦力 f = <b>' + nfix(Math.abs(st.fb), 3) + ' N</b><br>摩擦生热 Q = Σ f·s<sub>相对</sub> = <b>' + nfix(st.Q1, 3) + ' J</b>' + (st.sRel - (st.rMax - st.rMin) > 1e-6 ? '<br><span style="color:#a61e1e">痕迹已出现重叠：痕迹长度 &lt; 相对路程。</span>' : '');
 }
 let lastTs = 0;
 function tick(ts) {
@@ -1597,11 +1648,11 @@ function tick(ts) {
  * ===================================================================== */
 function exportBackup(cfg) {
   cfg = cfg || App.cfg;
-  download(JSON.stringify({ app: 'pb-sim', version: 1, exportedAt: new Date().toISOString(), config: cfg }, null, 2), safeName(cfg.name) + '.备份.json', 'application/json');
+  download(JSON.stringify({ app: 'pb-sim', version: 1, exportedAt: new Date().toISOString(), config: packCfg(cfg) }, null, 2), safeName(cfg.name) + '.备份.json', 'application/json');
   toast('已导出备份文件（不含 API Key）', 'ok');
 }
 function exportPage() {
-  const json = JSON.stringify(App.cfg).replace(/</g, '\\u003c');
+  const json = JSON.stringify(packCfg(App.cfg)).replace(/</g, '\\u003c');
   const open = '<scr' + 'ipt id="embedded-config" type="application/json">', close = '</scr' + 'ipt>';
   const a = PRISTINE_HTML.indexOf(open), b = a < 0 ? -1 : PRISTINE_HTML.indexOf(close, a);
   if (a < 0 || b < 0) { toast('导出失败：未找到配置占位标签', 'bad'); return; }
@@ -1815,7 +1866,7 @@ function schemaText() {
   let s = '【模拟器配置 JSON 结构】\n{"name":"配置名","model":"belt 或 board","params":{"参数键":"表达式字符串"},"options":{"approx37":true,"afterLeave":"stop 或 continue"}}\n' +
     '【坐标与符号约定】x 轴沿接触面：水平时向右为正；倾斜时斜面左低右高，沿斜面向上为正。速度、外力带符号（向左 / 沿斜面向下为负）。位置从左端（底端）量起，右端（顶端）为 L。最大静摩擦力等于滑动摩擦力。\n' +
     '【表达式】参数值用字符串，可写 0.5、√3/3、2√2、π/6、tan(37°)、3/8 等。approx37 = true 时取 sin37° = 0.6、cos37° = 0.8。afterLeave 仅对板块模型有效；options.collision 仅对 duo 模型有效，取 elastic（弹性碰撞）、stick（完全非弹性，碰后粘连）、e（按恢复系数 e）、none（不碰撞，只记录相遇，用于追及相遇问题）。duo 模型中两物块 A、B 在同一直线上运动，各自只受重力、支持力和地面摩擦力。\n';
-  Object.keys(MODELS).forEach(id => { const M = MODELS[id]; s += '【model = "' + id + '"：' + M.name + '】参数：\n' + M.params.map(p => '- ' + p.key + '：' + p.name + (p.unit ? '（' + p.unit + '）' : '') + '，默认 "' + p.def + '"' + (p.ai ? '；' + p.ai : '')).join('\n') + '\n'; });
+  Object.keys(MODELS).filter(id => !MODELS[id].noAI).forEach(id => { const M = MODELS[id]; s += '【model = "' + id + '"：' + M.name + '】参数：\n' + M.params.map(p => '- ' + p.key + '：' + p.name + (p.unit ? '（' + p.unit + '）' : '') + '，默认 "' + p.def + '"' + (p.ai ? '；' + p.ai : '')).join('\n') + '\n'; });
   return s;
 }
 function fillPrompt(id) {
@@ -1825,6 +1876,7 @@ function fillPrompt(id) {
     .replace(/\{\{METRICS\}\}/g, () => METRICS.map(m => '- ' + m.id + '：' + m.name + '（' + m.unit + '）').join('\n'));
 }
 function simDigest(cfg, P, sim) {
+  if (sim.digest) return sim.digest();
   const r = x => (x == null || !isFinite(x)) ? null : +(+x).toFixed(4), S = sim.summary, num = {};
   MODELS[cfg.model].params.forEach(p => { num[p.key] = isFinite(P[p.key]) ? r(P[p.key]) : '一直作用'; });
   return { 模型: MODELS[cfg.model].name + (sim.duo ? '（下文“物块”= 物块A，“载体”= 物块B，摩擦力均指与地面间的摩擦力；碰撞类型 ' + P.collision + '）' : ''), 碰撞记录: sim.duo ? sim.collisions.map(c => ({ t: r(c.t), 位置: r(c.x), A碰前: r(c.u1), B碰前: r(c.u2), A碰后: r(c.v1), B碰后: r(c.v2), 机械能损失: r(c.loss) })) : undefined, 相遇记录: sim.duo && sim.meets.length ? sim.meets.map(c => ({ t: r(c.t), 位置: r(c.x) })) : undefined, 参数表达式: cfg.params, 参数数值: num, sinθ: r(P.sin), cosθ: r(P.cos),
@@ -2182,9 +2234,9 @@ const DUO_NAMES = { '物块': 'A', '@': 'B', '相对Δx': 'xA−xB 变化', '木
 METRICS.push({ id: 'tMeet', name: '首次碰撞/相遇时刻', unit: 's', f: s => s.duo && s.summary.tMeet != null ? s.summary.tMeet : NaN },
   { id: 'Ecoll', name: '碰撞损失机械能', unit: 'J', f: s => s.duo ? s.summary.Ecoll : NaN },
   { id: 'nColl', name: '碰撞/相遇次数', unit: '次', f: s => s.duo ? s.summary.nColl : NaN });
-function nm(sim) { return sim.duo ? { a: 'A', c: 'B', A: '物块 A', C: '物块 B' } : { a: '物', c: sim.isBelt ? '带' : '板', A: '物块', C: sim.isBelt ? '传送带' : '木板' }; }
+function nm(sim) { return sim.who ? sim.who : sim.duo ? { a: 'A', c: 'B', A: '物块 A', C: '物块 B' } : { a: '物', c: sim.isBelt ? '带' : '板', A: '物块', C: sim.isBelt ? '传送带' : '木板' }; }
 function duoBox(sim, st) {
-  const done = sim.collisions.filter(c => c.t <= st.t + 1e-9), mt = sim.meets.filter(c => c.t <= st.t + 1e-9);
+  const tl = st.tl == null ? st.t : st.tl, done = sim.collisions.filter(c => c.t <= tl + 1e-9), mt = sim.meets.filter(c => c.t <= tl + 1e-9);
   return '系统动量 p = m<sub>A</sub>v<sub>A</sub> + m<sub>B</sub>v<sub>B</sub> = <b>' + nfix(st.pb + st.pc, 3) + ' kg·m/s</b><br>系统动能 E<sub>k</sub> = <b>' + nfix(st.Ekb + st.Ekc, 3) + ' J</b><br>摩擦生热 Q<sub>A</sub> + Q<sub>B</sub> = <b>' + nfix(st.Q1 + st.Q2, 3) + ' J</b><br>碰撞已损失的机械能 = <b>' + nfix(st.Ec, 3) + ' J</b>' +
     done.map((c, i) => '<br>第 ' + (i + 1) + ' 次碰撞（t = ' + nfix(c.t, 3) + ' s）：v<sub>A</sub> ' + nfix(c.u1, 2) + ' → ' + nfix(c.v1, 2) + '，v<sub>B</sub> ' + nfix(c.u2, 2) + ' → ' + nfix(c.v2, 2)).join('') +
     mt.map((c, i) => '<br>第 ' + (i + 1) + ' 次相遇：t = ' + nfix(c.t, 3) + ' s，x = ' + nfix(c.x, 3) + ' m').join('');
@@ -2204,7 +2256,7 @@ function renderForceBox(sim, st) {
       (sim.duo ? '' : row('#9c36b5', '物块对木板的摩擦力 f′', -st.f1, 'N', dir(-st.f1))) + row('#6b4fbb', kind(st.mode2) + '地面摩擦力', st.f2, 'N', dir(st.f2)) +
       (Math.abs(st.Fc) > 1e-9 ? row('#d9480f', '外力 F板', st.Fc, 'N', dir(st.Fc)) : '') + row('#c92a2a', '合力 = Ma', P.M * st.ac, 'N', dir(st.ac)) + row('#1f7a36', '加速度', st.ac, 'm/s²', dir(st.ac));
   }
-  box.innerHTML = h;
+  box.innerHTML = sim.boat ? h.replace(/地面支持力/g, '水的浮力').replace(/物块对木板的摩擦力/g, '人对船的摩擦力').replace(/地面摩擦力/g, '水的阻力') : h;
 }
 
 /* —— ② 时刻书签 —— */
@@ -2408,7 +2460,7 @@ function bindExtra() {
 const SUBD = '₀₁₂₃₄₅₆₇₈₉';
 const RX_PFRAC = /\(([^()]+)\)\/(\d+)(?![\d.A-Za-z])/y, RX_NUM = /(\d+(?:\.\d+)?)?√(\d+)|(\d+(?:\.\d+)?)(π?)|π/y, RX_DEN = /\/(\d+)(?![\d.A-Za-z])/y,
   RX_APX = /≈\s*-?\d+(?:\.\d+)?/y, RX_FN = /sin|cos|tan/y, RX_GRP = /[\u4e00-\u9fa5]+|[A-Za-z0-9]+|[\s\S]/y,
-  RX_VAR = /([xvafFQWsI])(相对|物|板|带|共|静|地|合|电)|([xvamfQ])([AB])(?![A-Za-z])|(E)([kp])(物|板|A|B)?/y;
+  RX_VAR = /([xvafFQWsI])(相对|物|板|带|共|静|地|合|电|人|船)|([xvamfQ])([AB])(?![A-Za-z])|(E)([kp])(物|板|人|船|A|B)?/y;
 function mFrac(a, b) { return '<span class="mf"><span>' + a + '</span><span>' + b + '</span></span>'; }
 function mRoot(a) { return '<span class="mr">√<span class="mr-b">' + a + '</span></span>'; }
 function mrender(src, mode) {
@@ -2459,13 +2511,14 @@ function plainMath(s) {
 function phaseLine(l) { const k = l.indexOf('：'); return k > 0 && k <= 6 ? '<b>' + esc(l.slice(0, k)) + '</b>' + mathText(l.slice(k + 1)) : mathText(l); }
 function resultTiles(sim) {
   const S = sim.summary, none = sim.P.collision === 'none';
-  const T = sim.duo ? [['全过程时间', fmt(S.tEnd) + ' s'], [none ? '相遇次数' : '碰撞次数', String(none ? sim.meets.length : sim.collisions.length)], ['碰撞损失机械能', fmt(S.Ecoll) + ' J'], ['摩擦生热', fmt(S.Q1 + S.Q2) + ' J']]
+  const T = sim.tiles ? sim.tiles : sim.duo ? [['全过程时间', fmt(S.tEnd) + ' s'], [none ? '相遇次数' : '碰撞次数', String(none ? sim.meets.length : sim.collisions.length)], ['碰撞损失机械能', fmt(S.Ecoll) + ' J'], ['摩擦生热', fmt(S.Q1 + S.Q2) + ' J']]
     : [['全过程时间', fmt(S.tEnd) + ' s'], ['摩擦生热 Q', fmt(S.Q1) + ' J'], ['相对路程', fmt(S.sRel) + ' m'], ['痕迹长度', fmt(S.mark) + ' m']];
   return '<div class="tiles">' + T.map(t => '<div class="tile"><span>' + t[0] + '</span><b>' + mathText(t[1]) + '</b></div>').join('') + '</div>';
 }
 
 /* —— 解题过程 V3：每一步 = { tag 标签, tex 含 $公式$ 的文字 } —— */
 function solutionSteps(sim) {
+  if (sim.solution) return sim.solution(sim);
   if (sim.duo) return duoSolution(sim);
   const P = sim.P, S = sim.summary, steps = [], inc = P.sin > 1e-9, cosS = inc ? ' cosθ' : '', G = P.m * P.g, b = sim.isBelt, cn = b ? '传送带' : '木板', c = b ? '带' : '板', mu = b ? 'μ' : 'μ_{1}';
   const I0 = [{ tag: '约定', tex: '取' + (inc ? '沿斜面向上' : '水平向右') + '为正方向；最大静摩擦力等于滑动摩擦力。' },
@@ -2571,6 +2624,593 @@ function bindV3() {
   $('#mTabs').addEventListener('click', e => { const b = e.target.closest('button[data-m]'); if (!b) return; $('#simGrid').dataset.m = b.dataset.m; $$('#mTabs button').forEach(x => x.classList.toggle('on', x === b)); App.dirty = true; });
 }
 
+/* =====================================================================
+ * 9d. V4：2D / 3D 视图 · 平移缩放 · 全屏 · 人船模型 · 例题拼合
+ * ===================================================================== */
+App.view = { zoom: 1, x: 0, y: 0, follow: false, yaw: 0.5, pitch: 0.42, drag: 'rotate' };
+App.mode3d = false;
+/* 取某一时刻的状态但不切换“当前阶段”（拼合模拟用） */
+function peekState(sim, t) { const keep = sim.cur, s = stateAt(sim, t); if (sim.combo) sim.cur = keep; return s; }
+function packCfg(cfg) { const M = MODELS[cfg.model]; return M && M.pack ? M.pack(cfg) : cfg; }
+
+/* —— 屏幕坐标下的通用小画法（3D 视图与人船画面共用） —— */
+function sArrow(ctx, x1, y1, x2, y2, col, w, dash) {
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy); if (len < 3) return; const ux = dx / len, uy = dy / len;
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w || 2; ctx.setLineDash(dash ? [5, 3] : []);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * 6, y2 - uy * 6); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - ux * 9 - uy * 4, y2 - uy * 9 + ux * 4); ctx.lineTo(x2 - ux * 9 + uy * 4, y2 - uy * 9 - ux * 4); ctx.closePath(); ctx.fill();
+}
+function sText(ctx, str, x, y, col, font, align) {
+  ctx.font = font || ('12px ' + FONT); ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle'; ctx.setLineDash([]);
+  ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(255,253,248,.88)'; ctx.strokeText(str, x, y); ctx.fillStyle = col || '#1b2333'; ctx.fillText(str, x, y);
+}
+function sDim(ctx, x1, y1, x2, y2, col, label) {   // 尺寸线：两端带短竖线，中间写数值
+  if (Math.hypot(x2 - x1, y2 - y1) < 3) return; ctx.strokeStyle = col; ctx.lineWidth = 1.3; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.moveTo(x1, y1 - 4); ctx.lineTo(x1, y1 + 4); ctx.moveTo(x2, y2 - 4); ctx.lineTo(x2, y2 + 4); ctx.stroke();
+  sText(ctx, label, (x1 + x2) / 2, (y1 + y2) / 2 - 9, col, '600 11px ' + FONT);
+}
+function sHUD(ctx, W, H, sim, st, tag) {
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.fillStyle = '#1b2333'; ctx.font = '600 14px ui-monospace,Consolas,monospace'; ctx.fillText('t = ' + st.t.toFixed(3) + ' s', 12, 22);
+  if (sim.segs.length) {
+    ctx.font = '12px ' + FONT; ctx.fillStyle = '#566078'; let str = '过程 ' + (st.i + 1) + '/' + sim.segs.length + ' · ' + sim.phases[st.i].title, cut = false;
+    while (ctx.measureText(str).width > W - 130 && str.length > 6) { str = str.slice(0, -1); cut = true; }
+    ctx.fillText(str + (cut ? '…' : ''), 12, 40);
+  }
+  if (tag) { ctx.font = '11px ' + FONT; ctx.fillStyle = '#8a93a6'; ctx.textAlign = 'right'; ctx.fillText(tag, W - 12, 22); }
+}
+function sceneFlags(sim, st, flags, noCarrier) {   // 红旗此刻在接触面坐标中的位置
+  const cnt = { ground: 0, carrier: 0 }, cl = sim.boat ? '船' : sim.isBelt ? '带' : '板';
+  return (flags || []).map(f => {
+    const n = ++cnt[f.anchor]; if (f.t > st.t + 1e-9 || (noCarrier && f.anchor === 'carrier')) return null;
+    const fs = peekState(sim, f.t); if (fs.stage !== st.stage) return null;
+    return { anchor: f.anchor, label: (f.anchor === 'ground' ? '地' : cl) + n, x: f.anchor === 'ground' ? fs.xb : fs.xr + st.xc };
+  }).filter(Boolean);
+}
+
+/* ---------------------------------------------------------------------
+ * 人船模型：水的阻力不计，水平方向动量守恒
+ *   数据通道沿用“物块 = 人、载体 = 船”，因此图表 / 扫描 / 反求 / 测量都可直接使用
+ * --------------------------------------------------------------------- */
+MODELS.boat = {
+  id: 'boat', name: '人船模型（动量守恒）', short: '人船', carrier: '船', fresh: true,
+  params: [COMMON_PARAMS[0], COMMON_PARAMS[2],
+    { key: 'L', sym: 'L', name: '船长', unit: 'm', def: '3', group: '船', pos: true },
+    { key: 'M', sym: 'M', name: '船的质量', unit: 'kg', def: '120', group: '船', pos: true },
+    { key: 'vS0', sym: 'v<sub>0</sub>', name: '人船初始共同速度', unit: 'm/s', def: '0', group: '船', hint: '原来静止填 0', ai: '带符号；人和船原来静止填 "0"' },
+    { key: 'm', sym: 'm', name: '人的质量', unit: 'kg', def: '60', group: '人', pos: true },
+    { key: 'x0', sym: 'x<sub>0</sub>', name: '人的初始位置（距船左端）', unit: 'm', def: '0', group: '人', nonneg: true, ai: '站在船尾(左端)填 "0"，站在船头(右端)填 L' },
+    { key: 'dWalk', sym: 'd', name: '人相对船走过的距离', unit: 'm', def: '3', group: '人', pos: true, hint: '从一端走到另一端时等于船长 L' },
+    { key: 'u', sym: 'u', name: '人相对船的行走速度', unit: 'm/s', def: '1', group: '人', hint: '正 = 向右走，负 = 向左走', ai: '带符号：向右走为正' },
+    { key: 'aW', sym: 'a<sub>相</sub>', name: '起步 / 停步的相对加速度', unit: 'm/s²', def: '1', group: '人', nonneg: true, hint: '0 = 瞬间起步、瞬间停下' }],
+  build(cfg, P, errors) {
+    if (errors.u || errors.x0 || errors.L || errors.dWalk) return;
+    if (Math.abs(P.u) < 1e-9) { errors.u = '相对速度不能为 0'; return; }
+    const room = P.u > 0 ? P.L - P.x0 : P.x0;
+    if (P.dWalk > room + 1e-9) errors.dWalk = '超出船的范围：朝这个方向最多还能走 ' + nfix(room, 3) + ' m';
+  },
+  simulate(P) { return simulateBoat(P); },
+  presets: [
+    { name: '经典人船·从船尾走到船头', params: { L: '3', M: '120', m: '60', x0: '0', dWalk: '3', u: '1', aW: '1' },
+      problem: { text: '质量 M=120 kg、长 L=3 m 的小船静止在平静的水面上，质量 m=60 kg 的人站在船尾。不计水的阻力，人从船尾走到船头的过程中，求：\n(1) 人相对地面的位移；\n(2) 船相对地面的位移。', answer: '(1) 2 m（向前）  (2) 1 m（向后）' } },
+    { name: '人船·结果保留分数', params: { L: '5', M: '140', m: '70', x0: '0', dWalk: '5', u: '1', aW: '1' },
+      problem: { text: '长 L=5 m、质量 M=140 kg 的小船静止在水面上，质量 m=70 kg 的人从船尾走到船头，不计水的阻力。求人和船相对地面的位移大小。', answer: '人 10/3 m，船 5/3 m' } },
+    { name: '人从船头走回船尾（反向行走）', params: { L: '4', M: '150', m: '50', x0: '4', dWalk: '4', u: '-1', aW: '1' },
+      problem: { text: '长 L=4 m、质量 M=150 kg 的小船静止在水面上，质量 m=50 kg 的人从船头走到船尾，不计水的阻力。求人和船相对地面的位移。', answer: '人向后 3 m，船向前 1 m' } },
+    { name: '人船原来一起匀速·人向前走', params: { L: '3', M: '120', m: '60', x0: '0', dWalk: '3', u: '1', aW: '1', vS0: '1' },
+      problem: { text: '质量 M=120 kg、长 L=3 m 的小船载着质量 m=60 kg 的人，一起以 1 m/s 的速度在水面上匀速前进。人从船尾走到船头：相对船先以 1 m/s² 加速到 1 m/s，匀速一段后再以 1 m/s² 减速停下。不计水的阻力，求这段时间内人和船相对地面的位移。', answer: '用时 4 s；人 6 m，船 3 m（仍满足 x人 − x船 = 3 m）' } },
+    { name: '突然起步（瞬间获得相对速度）', params: { L: '3', M: '120', m: '60', x0: '0', dWalk: '3', u: '1.5', aW: '0' },
+      problem: { text: '质量 M=120 kg、长 L=3 m 的小船静止在水面上，质量 m=60 kg 的人突然以相对船 1.5 m/s 的速度从船尾匀速走向船头，不计水的阻力。求：\n(1) 行走过程中人和船相对地面的速度；\n(2) 走到船头时两者的位移。', answer: '(1) 人 1 m/s，船 0.5 m/s（反向）  (2) 人 2 m，船 1 m' } }
+  ]
+};
+function simulateBoat(P) {
+  const m = P.m, M = P.M, L = P.L, tot = m + M, dir = P.u >= 0 ? 1 : -1, U = Math.abs(P.u), D = P.dWalk, aW = P.aW, V0 = P.vS0, x0 = clamp(P.x0, 0, L), smooth = aW > 1e-9;
+  const prof = [];   // 人相对船的运动：[时长, 相对加速度, 类型]
+  if (smooth) {
+    const d1 = U * U / (2 * aW);
+    if (2 * d1 >= D - 1e-12) { const tp = Math.sqrt(D / aW); prof.push([tp, dir * aW, 'acc'], [tp, -dir * aW, 'dec']); }
+    else prof.push([U / aW, dir * aW, 'acc'], [(D - 2 * d1) / U, 0, 'walk'], [U / aW, -dir * aW, 'dec']);
+  } else prof.push([D / U, 0, 'walk']);
+  let t = 0, xr = x0, xc = 0, vr = smooth ? 0 : dir * U, sRel = 0, endReason = 'steady', vrMax = Math.abs(vr), resid = 0;
+  const segs = [], events = [], phases = [], wd = v => Math.abs(v) < 1e-9 ? '' : (v > 0 ? '（向右）' : '（向左）');
+  const TITLE = { acc: '人起步加速，船反向加速', walk: '人匀速行走，船匀速运动', dec: '人减速停下，船同时减速', steady: Math.abs(V0) < 1e-12 ? '人、船都静止' : '人船一起匀速运动' };
+  const push = (dt, ar, kind) => {
+    const aP = M * ar / tot, aB = -m * ar / tot, f = m * aP, vr0 = vr;
+    const g = { i: segs.length, t0: t, t1: t + dt, xb0: xc + xr, vb0: V0 + M * vr / tot, ab: aP, xc0: xc, vc0: V0 - m * vr / tot, ac: aB, on: true, f1: f, f2: 0, fg: 0, fb: f,
+      mode1: Math.abs(f) > 1e-9 ? 'static' : 'none', mode2: 'none', modeG: 'none', slip1: false, Fb: 0, Fc: 0, Q10: 0, Q20: 0, s0: sRel, rMin: 0, rMax: 0, end: kind, kind };
+    const dxr = vr * dt + 0.5 * ar * dt * dt; xc += g.vc0 * dt + 0.5 * aB * dt * dt; xr += dxr; sRel += Math.abs(dxr); vr += ar * dt; if (Math.abs(vr) < 1e-9) vr = 0; t += dt; vrMax = Math.max(vrMax, Math.abs(vr));
+    g.xb1 = xc + xr; g.vb1 = V0 + M * vr / tot; g.xc1 = xc; g.vc1 = V0 - m * vr / tot; resid = Math.max(resid, Math.abs(m * g.vb1 + M * g.vc1 - tot * V0));
+    segs.push(g); events.push({ t, type: kind });
+    phases.push({ title: TITLE[kind], end: '', lines: [
+      '人：a = ' + fmt(aP) + ' m/s²，' + (Math.abs(f) > 1e-9 ? '受船的静摩擦力 ' + fmt(Math.abs(f)) + ' N' + wd(f) : '水平方向不受力') + '；v：' + fmt(g.vb0) + ' → ' + fmt(g.vb1) + ' m/s',
+      '船：a = ' + fmt(aB) + ' m/s²；v：' + fmt(g.vc0) + ' → ' + fmt(g.vc1) + ' m/s',
+      '人相对船：速度 ' + fmt(vr0) + ' → ' + fmt(vr) + ' m/s，本过程在船上走过 ' + fmt(Math.abs(dxr)) + ' m',
+      '位移：人 ' + fmt(g.xb1 - g.xb0) + ' m，船 ' + fmt(g.xc1 - g.xc0) + ' m'] });
+  };
+  for (let i = 0; i < prof.length; i++) {
+    const p = prof[i], left = P.tMax - t; if (left <= TE) { endReason = 'tmax'; break; }
+    const cut = p[0] > left + 1e-12, lastP = i === prof.length - 1;
+    push(cut ? left : p[0], p[1], p[2]);
+    phases[phases.length - 1].end = cut ? '达到最长模拟时间' : p[2] === 'acc' ? '人相对船的速度达到 ' + fmt(Math.abs(vr)) + ' m/s' : !lastP ? '人开始减速'
+      : (smooth ? '人相对船停下' : '人突然停下，船也同时恢复原来的速度') + '：在船上共走过 ' + fmt(sRel) + ' m';
+    if (cut) { endReason = 'tmax'; break; }
+  }
+  if (endReason === 'steady') { vr = 0; if (P.tMax - t > TE) { push(Math.min(P.tMax - t, clamp(0.35 * t, 1, 4)), 0, 'steady'); phases[phases.length - 1].end = '此后运动状态不再变化'; } }
+  const last = segs[segs.length - 1], tail = last.kind === 'steady', done = endReason === 'steady';
+  const sim = { P, isBelt: false, boat: true, segs, events, phases, tEnd: t, endReason, x0, vc0: V0, who: { a: '人', c: '船', A: '人', C: '船' },
+    names: { '物块': '人', '@': '船', '木板': '船', '相对Δx': '人相对船', '物块受f': '人受f', '地面对板f': '水对船f', 'Q(物块-@)': 'Q', 'Q(地面)': 'Q水', 'Ek物': 'Ek人', 'Ek板': 'Ek船' },
+    resultRows: boatRows, checks: boatChecks, solution: boatSolution, render2D: renderBoat };
+  sim.infoBox = st => boatBox(sim, st);
+  sim.fake = { i: 0, t0: 0, t1: 0, xb0: x0, vb0: V0, ab: 0, xc0: 0, vc0: V0, ac: 0, on: true, f1: 0, f2: 0, fg: 0, fb: 0, Q10: 0, Q20: 0, s0: 0, rMin: 0, rMax: 0 };
+  let xmin = 0, xmax = L, vmax = Math.max(Math.abs(V0), 1e-6), vP = V0, vB = V0;
+  segs.forEach(g => {
+    xmin = Math.min(xmin, g.xc1); xmax = Math.max(xmax, g.xc1 + L); vmax = Math.max(vmax, Math.abs(g.vb0), Math.abs(g.vb1), Math.abs(g.vc0), Math.abs(g.vc1));
+    [g.vb0, g.vb1].forEach(v => { if (Math.abs(v) > Math.abs(vP)) vP = v; }); [g.vc0, g.vc1].forEach(v => { if (Math.abs(v) > Math.abs(vB)) vB = v; });
+  });
+  sim.xmin = xmin; sim.xmax = xmax; sim.vmax = vmax; sim.samples = [];
+  for (const g of segs) for (let k = 0; k <= 20; k++) sim.samples.push(stateInSeg(sim, g, g.t0 + (g.t1 - g.t0) * k / 20));
+  const xbE = tail ? last.xb0 : last.xb1, xcE = tail ? last.xc0 : last.xc1, vbE = done ? V0 : last.vb1, vcE = done ? V0 : last.vc1;
+  const S = { tEnd: tail ? last.t0 : t, tSim: t, xb: xbE - x0, xc: xcE, vb: vbE, vc: vcE, dRel: (xbE - xcE) - x0, sRel, mark: 0, Q1: 0, Q2: 0, Wf: 0.5 * m * (vbE * vbE - V0 * V0), WFb: 0, WFc: 0, Wbelt: 0,
+    tCommon: null, tLeave: null, dEkb: 0.5 * m * (vbE * vbE - V0 * V0), dEkc: 0.5 * M * (vcE * vcE - V0 * V0), dEpb: 0, dEpc: 0, resid, vPmax: vP, vBmax: vB, Wman: 0.5 * m * M / tot * vrMax * vrMax };
+  sim.summary = S;
+  sim.tiles = [['走完用时', fmt(S.tEnd) + ' s'], ['人相对船', fmt(S.dRel) + ' m'], ['人对地位移', fmt(S.xb) + ' m'], ['船对地位移', fmt(S.xc) + ' m']];
+  return sim;
+}
+function boatRows(sim) {
+  const S = sim.summary, P = sim.P, R = [];
+  R.push(['结束情况', sim.endReason === 'tmax' ? '达到最长模拟时间（人还没有走完）' : '人走完全程并相对船静止']);
+  R.push(['人走完全程的时间', fmt(S.tEnd) + ' s'], ['人对地位移 x人', fmt(S.xb) + ' m'], ['船对地位移 x船', fmt(S.xc) + ' m'], ['人相对船的位移 d = x人 − x船', fmt(S.dRel) + ' m']);
+  if (Math.abs(P.vS0) < 1e-12 && Math.abs(S.xc) > 1e-12) R.push(['位移大小之比 |x人| : |x船|', fmt(Math.abs(S.xb / S.xc)) + '（等于 M : m）']);
+  R.push(['人的最大对地速度', fmt(S.vPmax) + ' m/s'], ['船的最大对地速度', fmt(S.vBmax) + ' m/s'], ['系统总动量（全程不变）', fmt((P.m + P.M) * P.vS0) + ' kg·m/s'],
+    ['系统动能的最大增量（人做的功）', fmt(S.Wman) + ' J'], ['动量守恒残差', S.resid.toExponential(1) + ' kg·m/s']);
+  return R;
+}
+function boatChecks(inp, sim) {
+  const P = sim.P, S = sim.summary, out = [], tot = P.m + P.M, add = (s, i, d) => out.push({ status: s, item: i, detail: d });
+  add(sim.endReason === 'tmax' ? 'warn' : 'pass', '参数与运行状态', sim.endReason === 'tmax' ? '模拟被“最长模拟时间”截断，人还没有走完' : '人走完全程，过程完整结束');
+  add(S.resid < 1e-8 * Math.max(1, tot * Math.abs(P.vS0) + P.m * Math.abs(P.u)) ? 'pass' : 'fail', '动量守恒：m·v人 + M·v船 = (m + M)·v0', '各过程端点的最大残差 ' + S.resid.toExponential(1) + ' kg·m/s');
+  let r3 = 0, rx = 0;
+  sim.segs.forEach(g => { r3 = Math.max(r3, Math.abs(P.m * g.ab + P.M * g.ac)); rx = Math.max(rx, Math.abs(P.m * (g.xb1 - sim.x0) + P.M * g.xc1 - tot * P.vS0 * g.t1)); });
+  add(r3 < 1e-8 * Math.max(1, tot) ? 'pass' : 'fail', '牛顿第三定律：人与船之间的水平力等大反向（m·a人 + M·a船 = 0）', '最大残差 ' + r3.toExponential(1) + ' N');
+  add(rx < 1e-7 * Math.max(1, tot * P.L) ? 'pass' : 'fail', '位移关系：m·x人 + M·x船 = (m + M)·v0·t', '最大残差 ' + rx.toExponential(1) + ' kg·m');
+  add(Math.abs(Math.abs(S.dRel) - S.sRel) < 1e-7 * Math.max(1, P.L) ? 'pass' : 'fail', '几何关系：x人 − x船 = 人相对船的位移', 'x人 − x船 = ' + nfix(S.dRel, 4) + ' m，人在船上走过 ' + nfix(S.sRel, 4) + ' m');
+  if (Math.abs(P.vS0) < 1e-12) add('info', '人船模型结论', 'x人 = M·d ÷ (m + M) = ' + fmt(P.M * S.dRel / tot) + ' m，x船 = −m·d ÷ (m + M) = ' + fmt(-P.m * S.dRel / tot) + ' m。位移大小与质量成反比，与人走得快慢无关。');
+  if (P.aW <= 1e-9) add('info', '瞬间起步 / 停步', '相对加速度取 0 表示人“突然”获得相对速度：起步和停步瞬间速度发生突变（冲量作用），动量仍然守恒。');
+  return out;
+}
+function boatSolution(sim) {
+  const P = sim.P, S = sim.summary, tot = P.m + P.M, d = S.dRel, v0 = P.vS0, still = Math.abs(v0) < 1e-12, steps = [];
+  steps.push({ title: '模型与约定', items: [
+    { tag: '约定', tex: '取水平向右为正方向；不计水的阻力，人和船组成的系统水平方向合外力为零，动量守恒。' },
+    { tag: '已知', tex: '$m = ' + fx(P.m) + '$ kg，$M = ' + fx(P.M) + '$ kg，人相对船的位移 $d = ' + fx(d) + '$ m' + (still ? '；开始时人、船都静止。' : '；开始时人船一起以 $v_{0} = ' + fx(v0) + '$ m/s 运动。') }] });
+  const A = [
+    { tag: '动量守恒', tex: still ? '任意时刻 $m v_人 + M v_船 = 0$ ⇒ $m v_人 = −M v_船$（人向前走，船向后退）' : '任意时刻 $m v_人 + M v_船 = (m + M)v_{0}$' },
+    { tag: '位移关系', tex: still ? '速度关系对时间累积：$m x_人 + M x_船 = 0$' : '速度关系对时间累积：$m x_人 + M x_船 = (m + M)v_{0}t$，其中 $t = ' + fx(S.tEnd) + '$ s' },
+    { tag: '几何关系', tex: '人相对船的位移 $x_人 − x_船 = d = ' + fx(d) + '$ m' },
+    { tag: '人的位移', tex: '$x_人 = {M}//{m + M}·d' + (still ? '' : ' + v_{0}t') + ' = {' + fx(P.M) + '}//{' + fx(tot) + '} × ' + par(d) + (still ? '' : ' + ' + par(v0 * S.tEnd)) + ' = #' + fx(S.xb) + '#$ m' },
+    { tag: '船的位移', tex: '$x_船 = −{m}//{m + M}·d' + (still ? '' : ' + v_{0}t') + ' = −{' + fx(P.m) + '}//{' + fx(tot) + '} × ' + par(d) + (still ? '' : ' + ' + par(v0 * S.tEnd)) + ' = #' + fx(S.xc) + '#$ m' }];
+  if (still) A.push({ tag: '结论', tex: '$|x_人| : |x_船| = M : m = ' + fx(P.M / P.m) + '$；位移只取决于质量和相对位移，与人走得快慢无关。' });
+  steps.push({ title: '动量守恒 → 位移关系', items: A });
+  sim.segs.forEach((g, i) => {
+    if (g.kind === 'steady') return; const dt = g.t1 - g.t0, I = [];
+    if (Math.abs(g.f1) > 1e-9) {
+      I.push({ tag: '人', tex: '船对人的静摩擦力提供加速度：$f = m·a_人 = ' + fx(P.m) + ' × ' + par(g.ab) + ' = #' + fx(g.f1) + '#$ N' });
+      I.push({ tag: '船', tex: '人对船的反作用力：$M·a_船 = −f$ ⇒ $a_船 = {' + fx(-g.f1) + '}//{' + fx(P.M) + '} = #' + fx(g.ac) + '#$ m/s²' });
+    } else I.push({ tag: '受力', tex: '人匀速行走，人与船之间水平方向没有相互作用力，两者都做匀速运动。' });
+    I.push({ tag: '速度', tex: '$v_人 = ' + fx(g.vb0) + ' → #' + fx(g.vb1) + '#$ m/s，$v_船 = ' + fx(g.vc0) + ' → #' + fx(g.vc1) + '#$ m/s' });
+    I.push({ tag: '位移', tex: '$Δx_人 = #' + fx(g.xb1 - g.xb0) + '#$ m，$Δx_船 = #' + fx(g.xc1 - g.xc0) + '#$ m（历时 ' + fx(dt) + ' s）' });
+    I.push({ tag: '结束', tex: sim.phases[i].end });
+    steps.push({ title: '过程 ' + (i + 1) + '（' + fx(g.t0) + ' s → ' + fx(g.t1) + ' s）：' + sim.phases[i].title, items: I });
+  });
+  steps.push({ title: '能量', items: [{ tag: '功能关系', tex: '系统动能的增量来自人做的功（消耗体能）：行走中动能最多增加 $ΔE_k = #' + fx(S.Wman) + '#$ J；人停下后，系统动能又回到初值。' }] });
+  return steps;
+}
+function boatBox(sim, st) {
+  const P = sim.P;
+  return '系统动量 m·v<sub>人</sub> + M·v<sub>船</sub> = <b>' + nfix(st.pb + st.pc, 3) + ' kg·m/s</b>（守恒）<br>人对地位移 x<sub>人</sub> = <b>' + nfix(st.sb, 3) + ' m</b><br>船对地位移 x<sub>船</sub> = <b>' + nfix(st.sc, 3) + ' m</b>' +
+    '<br>人相对船 d = x<sub>人</sub> − x<sub>船</sub> = <b>' + nfix(st.dRel, 3) + ' m</b><br>m·x<sub>人</sub> + M·x<sub>船</sub> − (m+M)·v<sub>0</sub>·t = <b>' + nfix(P.m * st.sb + P.M * st.sc - (P.m + P.M) * P.vS0 * (st.tl == null ? st.t : st.tl), 3) + ' kg·m</b>';
+}
+/* 人船模型的 2D 画面：水面、船、行走的人，并标注 x人、x船 和相对位移 d */
+function renderBoat(ctx, W, H, sim, st, o) {
+  const P = sim.P, vw = o.view || {}, small = W < 480, span = Math.max(sim.xmax - sim.xmin, 1e-6), pad = small ? 34 : 70;
+  const s = (vw.zoom || 1) * (W - 2 * pad) / span, cx = W / 2 + (vw.x || 0), yW = H * 0.68 + (vw.y || 0), xmid = vw.follow ? st.xb : (sim.xmin + sim.xmax) / 2, X = x => cx + (x - xmid) * s;
+  const hull = small ? 16 : 22, deck = yW - hull * 0.6, keel = yW + hull * 0.5, hP = small ? 44 : 62, yTop = deck - hP;
+  ctx.setLineDash([]); ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(70,90,130,.07)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = 0.5; x < W; x += 20) { ctx.moveTo(x, 0); ctx.lineTo(x, H); } for (let y = 0.5; y < H; y += 20) { ctx.moveTo(0, y); ctx.lineTo(W, y); } ctx.stroke();
+  const ln = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+  const hullPath = xl => { const a = X(xl), z = X(xl + P.L), e = Math.min(20, (z - a) * 0.1); ctx.beginPath(); ctx.moveTo(a - e, deck); ctx.lineTo(z + e, deck); ctx.lineTo(z - e * 0.3, keel); ctx.lineTo(a + e * 0.3, keel); ctx.closePath(); };
+  const man = (x, ghost) => {
+    const r = hP * 0.13, hip = deck - hP * 0.42, sh = yTop + 2 * r + hP * 0.08, sw = ghost ? hP * 0.07 : hP * (0.05 + 0.13 * Math.abs(Math.sin(st.dRel * 7)));
+    ctx.strokeStyle = ghost ? '#9aa3b5' : '#c2410c'; ctx.lineWidth = ghost ? 1.2 : 2.6; ctx.lineCap = 'round'; ctx.setLineDash(ghost ? [4, 3] : []);
+    ctx.beginPath(); ctx.moveTo(x + r, yTop + r); ctx.arc(x, yTop + r, r, 0, Math.PI * 2);
+    ctx.moveTo(x, yTop + 2 * r); ctx.lineTo(x, hip); ctx.lineTo(x - sw, deck); ctx.moveTo(x, hip); ctx.lineTo(x + sw, deck);
+    ctx.moveTo(x - hP * 0.17, sh + hP * 0.16); ctx.lineTo(x, sh); ctx.lineTo(x + hP * 0.17, sh + hP * 0.16); ctx.stroke();
+    if (!ghost) { ctx.fillStyle = '#e8590c'; ctx.beginPath(); ctx.arc(x, yTop + r, r, 0, Math.PI * 2); ctx.fill(); }
+    ctx.setLineDash([]); ctx.lineCap = 'butt';
+  };
+  const moved = Math.abs(st.sc) > 1e-9 || Math.abs(st.sb) > 1e-9, px = X(st.xb), flags = sceneFlags(sim, st, o.flags);
+  if (moved) { hullPath(0); ctx.setLineDash([5, 4]); ctx.strokeStyle = '#9aa3b5'; ctx.lineWidth = 1.2; ctx.stroke(); ctx.setLineDash([]); man(sim.x0, true); }   // 初始位置的虚影
+  const flag = f => {
+    const g = f.anchor === 'ground', x = X(f.x), y0 = g ? keel + 6 : deck, y1 = g ? yTop - 56 : deck - hP * 0.55, d = g ? 1 : -1;
+    ctx.strokeStyle = g ? '#6b7280' : '#4a3520'; ctx.lineWidth = 2; ln(x, y0, x, y1);
+    ctx.fillStyle = COL.flag; ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x + d * 15, y1 + 6); ctx.lineTo(x, y1 + 12); ctx.closePath(); ctx.fill();
+    sText(ctx, f.label, x + d * 18, y1 + 6, '#a61e1e', '600 11px ' + FONT, g ? 'left' : 'right');
+  };
+  flags.filter(f => f.anchor === 'ground').forEach(flag);
+  hullPath(st.xc); ctx.fillStyle = '#dfb97f'; ctx.fill(); ctx.strokeStyle = '#8a5a22'; ctx.lineWidth = 1.5; ctx.stroke();
+  ln(X(st.xc), deck, X(st.xc), deck - 5); ln(X(st.xc + P.L), deck, X(st.xc + P.L), deck - 5);
+  sText(ctx, 'M', X(st.xc + P.L / 2), (deck + keel) / 2, '#5b3a12', 'italic 600 12px ' + FONT);
+  ctx.fillStyle = 'rgba(77,171,247,.18)'; ctx.fillRect(0, yW, W, Math.max(0, H - yW));   // 水
+  ctx.strokeStyle = '#4dabf7'; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (let x = 0; x <= W; x += 6) { const y = yW + Math.sin((x + st.t * 14) / 16) * 1.6; if (x) ctx.lineTo(x, y); else ctx.moveTo(x, y); } ctx.stroke();
+  man(px, false);
+  flags.filter(f => f.anchor === 'carrier').forEach(flag);
+  if (moved) {   // 两者的位移标注
+    ctx.setLineDash([3, 3]); ctx.strokeStyle = '#b8bfcc'; ctx.lineWidth = 1;
+    ln(X(sim.x0), yTop - 44, X(sim.x0), deck); ln(px, yTop - 44, px, yTop - 4); ln(X(0), keel, X(0), keel + 30); ln(X(st.xc), keel, X(st.xc), keel + 30); ctx.setLineDash([]);
+    sDim(ctx, X(sim.x0), yTop - 18, px, yTop - 18, COL.block, 'x人 = ' + nfix(st.sb, 2) + ' m');
+    sDim(ctx, X(st.xc + sim.x0), yTop - 40, px, yTop - 40, COL.rel, 'd = x人 − x船 = ' + nfix(st.dRel, 2) + ' m');
+    sDim(ctx, X(0), keel + 24, X(st.xc), keel + 24, COL.carrier, 'x船 = ' + nfix(st.sc, 2) + ' m');
+  }
+  if (o.showVec !== false) {
+    const k = (small ? 44 : 64) / sim.vmax, va = v => Math.sign(v) * Math.max(14, Math.abs(v) * k);
+    if (Math.abs(st.vb) > 1e-6) { const d = Math.sign(st.vb), y = deck - hP * 0.62, x1 = px + d * hP * 0.24; sArrow(ctx, x1, y, x1 + va(st.vb), y, '#c2410c', 2); sText(ctx, 'v人=' + nfix(st.vb, 2), x1 + va(st.vb) + d * 4, y - 1, '#c2410c', '11px ' + FONT, d > 0 ? 'left' : 'right'); }
+    if (Math.abs(st.vc) > 1e-6) { const d = Math.sign(st.vc), y = (deck + keel) / 2, x1 = X(st.xc + (d > 0 ? P.L : 0)) + d * 24; sArrow(ctx, x1, y, x1 + va(st.vc), y, COL.carrier, 2); sText(ctx, 'v船=' + nfix(st.vc, 2), x1 + va(st.vc) + d * 4, y - 1, COL.carrier, '11px ' + FONT, d > 0 ? 'left' : 'right'); }
+  }
+  if (o.forces) {   // 竖直方向与水平方向的力分别取比例尺（水平力比重力小得多）
+    const G = P.m * P.g, kv = (small ? 38 : 52) / Math.max(G, 1e-9), fm = Math.max.apply(null, sim.segs.map(g => Math.abs(g.f1)).concat([1e-9])), kh = (small ? 34 : 48) / fm, yc = deck - hP * 0.5;
+    const vec = (x, y, dx, dy, col, lab) => { const l = Math.hypot(dx, dy); if (l < 3) return; sArrow(ctx, x, y, x + dx, y + dy, col, 2.2); sText(ctx, lab, x + dx + dx / l * 11, y + dy + dy / l * 11, col, '600 11px ' + FONT); };
+    vec(px, yc, 0, G * kv, '#2f3b52', 'G'); vec(px, yc, 0, -G * kv, '#0b7285', 'N'); vec(px, deck - 3, st.fb * kh, 0, '#9c36b5', 'f'); vec(X(st.xc + P.L / 2), deck + 5, -st.f1 * kh, 0, '#6b4fbb', 'f′');
+  }
+  sHUD(ctx, W, H, sim, st, '正方向 →');
+}
+
+/* ---------------------------------------------------------------------
+ * 3D 视图：不依赖任何库，用透视投影 + 分层绘制在 Canvas 2D 上画出立体场景
+ *   接触面坐标 (x 沿接触面, h 垂直接触面向上, z 纵深) → 世界坐标 → 屏幕
+ * --------------------------------------------------------------------- */
+function render3D(ctx, W, H, sim, st, o) {
+  const P = sim.P, vw = o.view || {}, th = P.rad || 0, c = Math.cos(th), sn = Math.sin(th), belt = !!sim.isBelt, duo = !!sim.duo, boat = !!sim.boat;
+  const span = Math.max(sim.xmax - sim.xmin, 1e-6), xmid = (sim.xmin + sim.xmax) / 2, u = span * 0.065;           // u：物块边长（米）
+  const wz = u * 2.4, tb = u * 0.35, hB = (belt || duo || boat) ? 0 : u * 0.32, hd = u * 0.9, base = belt ? -tb : 0, inc = th > 1e-9 && !boat;
+  const Wp = (x, h, z) => [(x - xmid) * c - h * sn, (x - xmid) * sn + h * c, z || 0];
+  const yG = boat ? -hd * 0.55 : inc ? Wp(sim.xmin - u, base, 0)[1] - span * 0.015 : belt ? -(tb + u * 1.5) : 0;      // 地面（水面）的世界高度
+  const gBase = boat ? -hd * 0.55 : inc ? base : belt ? -(tb + u * 1.5) : 0;                                           // 地面旗的旗杆底
+  const yaw = vw.yaw == null ? 0.5 : vw.yaw, pitch = vw.pitch == null ? 0.42 : vw.pitch, dist = span * 2.6;
+  const T = vw.follow ? Wp(st.xb, u, 0) : [0, (yG + (inc ? (sim.xmax - xmid) * sn : 0)) / 2 + u * 0.5, 0];
+  const K = (vw.zoom || 1) * Math.min(W * 0.72, H * 1.35) * dist / span, cx = W / 2 + (vw.x || 0), cy = H * 0.56 + (vw.y || 0);
+  const cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const pr = p => { const vx = p[0] - T[0], vy = p[1] - T[1], vz = p[2] - T[2], x1 = vx * cyw + vz * syw, z1 = vz * cyw - vx * syw, d = Math.max(dist - (vy * sp + z1 * cp), dist * 0.08); return [cx + x1 * K / d, cy - (vy * cp - z1 * sp) * K / d, d]; };
+  const cam = [T[0] - dist * cp * syw, T[1] + dist * sp, T[2] + dist * cp * cyw], LD = [-0.35, 0.8, 0.49];
+  const poly = (pts, fill, stroke, lw) => {
+    ctx.beginPath(); for (let i = 0; i < pts.length; i++) { const q = pr(pts[i]); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); } ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
+  };
+  const line = (a, b, col, lw, dash) => { const p = pr(a), q = pr(b); ctx.strokeStyle = col; ctx.lineWidth = lw || 1; ctx.setLineDash(dash || []); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.setLineDash([]); };
+  // 一个朝外的平面：背向相机则不画；亮度随朝向变化
+  const face = (pts, n, rgb) => {
+    const q = pts[0]; if ((cam[0] - q[0]) * n[0] + (cam[1] - q[1]) * n[1] + (cam[2] - q[2]) * n[2] <= 0) return;
+    const k = 0.6 + 0.4 * Math.max(0, n[0] * LD[0] + n[1] * LD[1] + n[2] * LD[2]); poly(pts, 'rgb(' + rgb.map(v => Math.round(v * k)).join(',') + ')', 'rgba(40,30,10,.35)', 1);
+  };
+  // 长方体：x∈[xa,xz]、h∈[h0,h1]、z∈[z0,z1]（接触面坐标）
+  const box = (xa, xz, h0, h1, z0, z1, rgb) => {
+    const ax = [[c, sn, 0], [-sn, c, 0], [0, 0, 1]], hs = [(xz - xa) / 2, (h1 - h0) / 2, (z1 - z0) / 2], oc = Wp((xa + xz) / 2, (h0 + h1) / 2, (z0 + z1) / 2);
+    for (let a = 0; a < 3; a++) for (const sg of [1, -1]) {
+      const n = ax[a].map(v => v * sg), ct = oc.map((v, i) => v + n[i] * hs[a]), b1 = ax[(a + 1) % 3], b2 = ax[(a + 2) % 3], e1 = hs[(a + 1) % 3], e2 = hs[(a + 2) % 3];
+      face([[1, 1], [1, -1], [-1, -1], [-1, 1]].map(e => ct.map((v, i) => v + b1[i] * e1 * e[0] + b2[i] * e2 * e[1])), n, rgb);
+    }
+  };
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#eaf0fa'); sky.addColorStop(1, '#fffdf8'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  // 地面 / 水面 + 网格
+  const R = span * 0.95, Rz = Math.max(span * 0.42, wz * 2), gs = niceStep(span, 8), gl = boat ? '#9ccdf5' : '#d9cfb9';
+  poly([[-R, yG, -Rz], [R, yG, -Rz], [R, yG, Rz], [-R, yG, Rz]], boat ? '#d3e8fb' : '#f1ead9', boat ? '#8cc4f2' : '#cfc5ae', 1);
+  ctx.globalAlpha = 0.55;
+  for (let x = Math.ceil(-R / gs) * gs, k = 0; x <= R && k < 60; x += gs, k++) line([x, yG, -Rz], [x, yG, Rz], gl, 1);
+  for (let z = Math.ceil(-Rz / gs) * gs, k = 0; z <= Rz && k < 60; z += gs, k++) line([-R, yG, z], [R, yG, z], gl, 1);
+  ctx.globalAlpha = 1;
+  if (inc) {   // 斜面（楔形体）
+    const A = Wp(sim.xmin - u, base), B = Wp(sim.xmax + u, base), zw = wz / 2 + u * 0.9, rgb = [228, 219, 200], Z = (p, z) => [p[0], p[1], z], G = (p, z) => [p[0], yG, z];
+    face([Z(A, -zw), Z(B, -zw), G(B, -zw), G(A, -zw)], [0, 0, -1], rgb); face([Z(B, -zw), Z(B, zw), G(B, zw), G(B, -zw)], [1, 0, 0], rgb);
+    face([Z(A, -zw), Z(A, zw), G(A, zw), G(A, -zw)], [-1, 0, 0], rgb); face([Z(A, zw), Z(B, zw), G(B, zw), G(A, zw)], [0, 0, 1], rgb);
+    face([Z(A, -zw), Z(B, -zw), Z(B, zw), Z(A, zw)], [-sn, c, 0], rgb);
+    const q = pr([A[0] + span * 0.16, yG, zw]); sText(ctx, 'θ=' + nfix(P.theta, 1) + '°', q[0], q[1] - 10, '#566078', '12px ' + FONT);
+  }
+  if (belt && !inc) for (const x of [P.L * 0.12, P.L * 0.88]) box(x - u * 0.16, x + u * 0.16, -(tb + u * 1.5), -tb, -wz * 0.4, wz * 0.4, [150, 158, 172]);   // 水平传送带的支架
+  if (boat) { const hw = -hd * 0.55, q = [Wp(-u * 0.3, hw, -wz / 2), Wp(P.L + u * 0.3, hw, -wz / 2), Wp(P.L + u * 0.3, hw, wz / 2), Wp(-u * 0.3, hw, wz / 2)]; for (let i = 0; i < 4; i++) line(q[i], q[(i + 1) % 4], '#5f93bf', 1.3, [5, 4]); }   // 船的初始位置
+  const offA = duo && P.collision !== 'none' ? (sim.aLeft ? -u / 2 : u / 2) : 0, zA = duo && P.collision === 'none' ? u * 0.75 : 0, bh = st.on ? hB : 0;
+  const drawBlock = () => {
+    if (boat) { box(st.xb - u * 0.24, st.xb + u * 0.24, 0, u * 1.35, -u * 0.24, u * 0.24, [232, 89, 12]); box(st.xb - u * 0.2, st.xb + u * 0.2, u * 1.4, u * 1.8, -u * 0.2, u * 0.2, [245, 190, 150]); }
+    else box(st.xb + offA - u / 2, st.xb + offA + u / 2, bh, bh + u, zA - u / 2, zA + u / 2, [232, 89, 12]);
+  };
+  const drawB = () => box(st.xc - offA - u / 2, st.xc - offA + u / 2, 0, u, -zA - u / 2, -zA + u / 2, [28, 126, 214]);
+  const drawCarrier = () => {
+    if (belt) {
+      box(0, P.L, -tb, 0, -wz / 2, wz / 2, [200, 206, 218]);
+      const spc = niceStep(span, 22), off = ((st.xc % spc) + spc) % spc; for (let x = off, k = 0; x <= P.L + 1e-9 && k < 400; x += spc, k++) line(Wp(x, 0, -wz / 2), Wp(x, 0, wz / 2), '#7d869b', 1.2);
+    } else if (boat) box(st.xc - u * 0.3, st.xc + P.L + u * 0.3, -hd * 0.55, 0, -wz / 2, wz / 2, [223, 185, 127]);
+    else if (!duo) box(st.xc, st.xc + P.L, 0, hB, -wz / 2, wz / 2, [223, 185, 127]);
+    if (st.rMax - st.rMin > 1e-6) {   // 痕迹
+      let a = st.rMin + st.xc, z = st.rMax + st.xc; if (belt) { a = clamp(a, 0, P.L); z = clamp(z, 0, P.L); }
+      const hm = hB + u * 0.002; if (z - a > 1e-9) poly([Wp(a, hm, -wz * 0.1), Wp(z, hm, -wz * 0.1), Wp(z, hm, wz * 0.1), Wp(a, hm, wz * 0.1)], 'rgba(15,15,20,.88)');
+    }
+  };
+  const flag3 = f => {
+    const g = f.anchor === 'ground', z = g ? -(wz / 2 + u * 0.5) : wz * 0.34, h0 = g ? gBase : hB, h1 = (g ? 0 : hB) + u * (g ? 2.7 : 1.7), d = g ? 1 : -1;
+    line(Wp(f.x, h0, z), Wp(f.x, h1, z), g ? '#6b7280' : '#4a3520', 2);
+    poly([Wp(f.x, h1, z), Wp(f.x + d * u * 0.75, h1 - u * 0.26, z), Wp(f.x, h1 - u * 0.52, z)], COL.flag);
+    const q = pr(Wp(f.x + d * u * 0.9, h1 - u * 0.26, z)); sText(ctx, f.label, q[0] + d * 8, q[1], '#a61e1e', '600 11px ' + FONT, g ? 'left' : 'right');
+  };
+  // —— 分层绘制：按“相机在哪一侧”决定先后，保证遮挡关系正确 ——
+  const flags = sceneFlags(sim, st, o.flags, duo), gFlags = flags.filter(f => f.anchor === 'ground'), cFlags = flags.filter(f => f.anchor === 'carrier' && (!belt || (f.x >= -1e-9 && f.x <= P.L + 1e-9)));
+  const front = cam[2] > 0, offBoard = !belt && !duo && !boat && !st.on;
+  if (front) gFlags.forEach(flag3);
+  let late = null;
+  if (offBoard) { const side = st.xb >= st.xc + P.L / 2 ? 1 : -1, e0 = Wp(st.xc + (side > 0 ? P.L : 0), 0, 0); if (((cam[0] - e0[0]) * c + (cam[1] - e0[1]) * sn) * side > 0) late = drawBlock; else drawBlock(); }
+  drawCarrier();
+  if (!front) cFlags.forEach(flag3);
+  if (duo) {
+    const aFirst = P.collision === 'none' ? !front : pr(Wp(st.xb + offA, u / 2, 0))[2] > pr(Wp(st.xc - offA, u / 2, 0))[2];
+    if (aFirst) { drawBlock(); drawB(); } else { drawB(); drawBlock(); }
+  } else if (!offBoard) drawBlock();
+  if (front) cFlags.forEach(flag3);
+  if (late) late();
+  if (!front) gFlags.forEach(flag3);
+  // —— 叠加层：文字、速度、受力、位移标注 ——
+  const UX = [c, sn, 0], UY = [-sn, c, 0], add = (p, d, k) => [p[0] + d[0] * k, p[1] + d[1] * k, p[2] + d[2] * k];
+  const arrow3 = (a, b, col, w, dash) => { const p = pr(a), q = pr(b); sArrow(ctx, p[0], p[1], q[0], q[1], col, w, dash); return [p, q]; };
+  const lab = (str, p, col, font) => { const q = pr(p); sText(ctx, str, q[0], q[1], col, font || ('600 12px ' + FONT)); };
+  const ctrA = Wp(st.xb + offA, bh + (boat ? u * 0.9 : u / 2), zA), ctrB = Wp(st.xc - offA, u / 2, -zA);
+  lab(boat ? '人' : duo ? 'A' : 'm', boat ? Wp(st.xb, u * 0.7, u * 0.24) : Wp(st.xb + offA, bh + u / 2, zA + u / 2), '#4a1d00', 'italic 600 12px ' + FONT);
+  if (duo) lab('B', Wp(st.xc - offA, u / 2, -zA + u / 2), '#072f57', 'italic 600 12px ' + FONT);
+  else if (boat) lab('船 M', Wp(st.xc + P.L / 2, -hd * 0.28, wz / 2), '#5b3a12');
+  else if (!belt) lab('M', Wp(st.xc + P.L / 2, hB / 2, wz / 2), '#5b3a12', 'italic 600 11px ' + FONT);
+  if (o.showVec !== false) {
+    const kv = span * 0.16 / sim.vmax, vl = v => Math.sign(v) * Math.max(u * 0.6, Math.abs(v) * kv), tip = (pq, str, col) => { const d = pq[1][0] >= pq[0][0] ? 1 : -1; sText(ctx, str, pq[1][0] + d * 5, pq[1][1] - 8, col, '11px ' + FONT, d > 0 ? 'left' : 'right'); };
+    if (Math.abs(st.vb) > 1e-6) { const a = Wp(st.xb + offA, bh + u * (boat ? 2.1 : 1.25), zA); tip(arrow3(a, add(a, UX, vl(st.vb)), '#c2410c', 2), (boat ? 'v人=' : duo ? 'vA=' : 'v=') + nfix(st.vb, 2), '#c2410c'); }
+    if (Math.abs(st.vc) > 1e-6) {
+      const a = duo ? Wp(st.xc - offA, u * 1.25, -zA) : Wp((belt ? P.L / 2 : st.xc + P.L / 2) - vl(st.vc) / 2, hB, wz / 2 + u * 0.35);
+      tip(arrow3(a, add(a, UX, vl(st.vc)), COL.carrier, 2), (boat ? 'v船=' : duo ? 'vB=' : belt ? 'v带=' : 'v板=') + nfix(st.vc, 2), COL.carrier);
+    }
+  }
+  if (o.forces) {
+    const bodies = [{ p: ctrA, foot: Wp(st.xb + offA, bh, zA), m: P.m, f: st.fb, F: st.Fb, a: st.ab }]; if (duo) bodies.push({ p: ctrB, foot: Wp(st.xc - offA, 0, -zA), m: P.M, f: st.f2, F: 0, a: st.ac });
+    const fm = Math.max.apply(null, bodies.map(q => Math.max(q.m * P.g, Math.abs(q.f), Math.abs(q.F), Math.abs(q.m * q.a)))), kf = span * 0.15 / Math.max(fm, 1e-9);
+    const vec = (a, d, len, col, str, dash) => { if (Math.abs(len) < 1e-12) return; const pq = arrow3(a, add(a, d, len), col, 2.2, dash), dx = pq[1][0] - pq[0][0], dy = pq[1][1] - pq[0][1], l = Math.hypot(dx, dy); if (l > 3) sText(ctx, str, pq[1][0] + dx / l * 11, pq[1][1] + dy / l * 11, col, '600 11px ' + FONT); };
+    bodies.forEach(q => {
+      const G = q.m * P.g; vec(q.p, [0, -1, 0], G * kf, '#2f3b52', 'G'); vec(q.p, UY, G * P.cos * kf, '#0b7285', 'N'); vec(q.foot, UX, q.f * kf, '#9c36b5', 'f'); vec(q.p, UX, q.F * kf, '#d9480f', 'F');
+      if (Math.abs(q.a) > 1e-9) { const top = add(q.p, UY, u * (boat ? 1.75 : 1.2)); vec(top, UX, q.m * q.a * kf, '#c92a2a', 'F合', true); vec(add(top, UY, u * 0.5), UX, Math.sign(q.a) * clamp(Math.abs(q.a) * span * 0.012, u * 0.5, u * 2.2), '#1f7a36', 'a'); }
+    });
+  }
+  const dim3 = (xa, xz, h, z, col, str) => { const p = pr(Wp(xa, h, z)), q = pr(Wp(xz, h, z)); sDim(ctx, p[0], p[1], q[0], q[1], col, str); };
+  const lastOf = a => { for (let i = flags.length - 1; i >= 0; i--) if (flags[i].anchor === a) return flags[i]; return null; }, fc = lastOf('carrier'), fg = lastOf('ground');
+  if (boat) {
+    dim3(sim.x0, st.xb, u * 2.7, 0, COL.block, 'x人=' + nfix(st.sb, 2) + 'm'); dim3(st.xc + sim.x0, st.xb, u * 3.5, 0, COL.rel, 'd=' + nfix(st.dRel, 2) + 'm');
+    dim3(0, st.xc, -hd * 0.55, wz / 2 + u * 0.7, COL.carrier, 'x船=' + nfix(st.sc, 2) + 'm');
+  } else {
+    if (fc && st.on) dim3(fc.x, st.xb, hB + u * 2.3, 0, COL.rel, 'Δx相对=' + nfix(st.xb - fc.x, 2) + 'm');
+    if (fg) dim3(fg.x, st.xb, hB + u * 3.1, 0, COL.carrier, (duo ? 'xA=' : 'x物=') + nfix(st.xb - fg.x, 2) + 'm');
+  }
+  sHUD(ctx, W, H, sim, st, '3D 视图 · 拖动旋转');
+}
+
+/* ---------------------------------------------------------------------
+ * 例题拼合：把多份配置按顺序串成一道多过程题
+ *   每个阶段引用一份已有配置（改该配置即改拼合结果）；衔接方式决定上一段末速度如何成为本段初速度
+ * --------------------------------------------------------------------- */
+const LINKS = {
+  abs: '承接物块末速率，沿本段正方向进入', neg: '承接物块末速率，沿本段负方向进入', keep: '承接物块末速度（保留正负号）',
+  absC: '承接上一段 木板 / 物块B 的末速率（正方向）', none: '不承接（按本例题原有初速度）'
+};
+MODELS.combo = {
+  id: 'combo', name: '例题拼合（多阶段串联）', short: '拼合', carrier: '载体', noAI: true, fresh: true, params: [], presets: [],
+  normalize(raw, cfg) {   // 导入时：若引用的配置不在本机，用随文件带来的快照重建
+    cfg.stages = (Array.isArray(raw.stages) ? raw.stages : []).map(s => {
+      if (!s) return null; let id = s.cfgId; const list = App.store.configs;
+      if (!list.some(x => x.id === id) && s.snap && s.snap.model !== 'combo') {
+        const n = normalizeConfig(s.snap), same = list.find(x => x.name === n.name && x.model === n.model && JSON.stringify(x.params) === JSON.stringify(n.params));
+        if (same) id = same.id; else { list.push(n); id = n.id; }
+      }
+      return { cfgId: id, link: LINKS[s.link] ? s.link : 'abs' };
+    }).filter(Boolean);
+  },
+  pack(cfg) {            // 导出时：把各阶段引用的配置一并打包
+    const out = clone(cfg);
+    out.stages = (out.stages || []).map(s => { const r = App.store.configs.find(x => x.id === s.cfgId); return { cfgId: s.cfgId, link: s.link, snap: r ? clone(r) : undefined }; });
+    return out;
+  },
+  build(cfg, P, errors) { // 依次模拟各阶段，并把上一段的末速度按衔接方式交给下一段
+    const runs = [], list = cfg.stages || []; let prev = null; P.runs = runs;
+    if (!list.length) { errors._msg = '这是“例题拼合”配置：请在下方添加至少一个阶段。'; return; }
+    for (let k = 0; k < list.length; k++) {
+      const s = list[k], src = App.store.configs.find(x => x.id === s.cfgId);
+      if (!src || src.model === 'combo') { errors._msg = '阶段 ' + (k + 1) + ' 引用的配置已不存在，请移除后重新添加。'; break; }
+      const one = clone(src), hasV0 = MODELS[one.model].params.some(p => p.key === 'v0'); let vIn = null;
+      if (prev && s.link !== 'none' && hasV0) {
+        const S = prev.sim.summary; vIn = s.link === 'keep' ? S.vb : s.link === 'neg' ? -Math.abs(S.vb) : s.link === 'absC' ? Math.abs(S.vc) : Math.abs(S.vb);
+        if (Math.abs(vIn) < 1e-9) vIn = 0;
+        one.params.v0 = nfix(vIn, 10);   // 写成普通小数（表达式解析器不认科学计数法）
+      }
+      const inp = buildInput(one);
+      if (!inp.ok) { errors._msg = '阶段 ' + (k + 1) + '「' + src.name + '」的参数有误，请点“打开”进入该配置修正。'; break; }
+      const sub = simulate(inp.P);
+      if (!sub.segs.length) { errors._msg = '阶段 ' + (k + 1) + '「' + src.name + '」在 t = 0 时就已结束（物块立即离开），无法拼合。'; break; }
+      prev = { cfg: one, name: src.name, link: k ? s.link : 'none', vIn, inp, sim: sub }; runs.push(prev);
+    }
+    Expr.setApprox(cfg.options.approx37 !== false);
+  },
+  simulate(P) { return simulateCombo(P); }
+};
+function simulateCombo(P) {
+  const stages = [], segs = [], phases = [], samples = [], events = [], NANS = ['sb', 'vb', 'ab', 'sc', 'vc', 'ac', 'dRel', 'sRel', 'fb', 'f2', 'Q1', 'Q2', 'Ekb', 'Ekc', 'dEp', 'pb', 'pc', 'xb', 'xc', 'Ec']; let off = 0;
+  P.runs.forEach((r, k) => {
+    const sub = r.sim, lastStage = k === P.runs.length - 1, tag = '〔阶段' + (k + 1) + '〕';
+    let list = sub.segs; if (!lastStage && sub.endReason === 'steady' && list.length > 1) list = list.slice(0, -1);   // 非末段：去掉“稳定之后”的尾巴
+    const dur = list[list.length - 1].t1, n0 = segs.length;
+    list.forEach((g, j) => {
+      const cg = Object.assign({}, g, { t0: g.t0 + off, t1: g.t1 + off, i: segs.length, k, sub: g }), ph = sub.phases[j];
+      phases.push({ title: tag + ph.title, lines: ph.lines, end: ph.end + (j === list.length - 1 && !lastStage ? ' → 进入阶段 ' + (k + 2) : '') });
+      segs.push(cg); events.push({ t: cg.t1, type: g.end });
+      for (let q = 0; q <= 20; q++) { const s = stateInSeg(sub, g, g.t0 + (g.t1 - g.t0) * q / 20); s.tl = s.t; s.t += off; s.i = cg.i; s.stage = k; samples.push(s); }
+    });
+    if (!lastStage) { const br = { t: off + dur }; NANS.forEach(key => { br[key] = NaN; }); samples.push(br); }   // 阶段之间断开曲线
+    stages.push({ k, sim: sub, cfg: r.cfg, inp: r.inp, name: r.name, link: r.link, vIn: r.vIn, tOff: off, dur, n0, n: list.length });
+    off += dur;
+  });
+  const sim = { combo: true, cur: 0, stages, segs, phases, samples, events, tEnd: off, endReason: P.runs[P.runs.length - 1].sim.endReason,
+    names: { '@': '载体', '木板': '载体', 'Ek板': 'Ek载体', '地面对板f': '地面对载体f', 'Q(物块-@)': 'Q(物块-载体)' },
+    stateInSeg(g, t) { const sg = stages[g.k]; sim.cur = g.k; const s = stateInSeg(sg.sim, g.sub, t - sg.tOff); s.tl = s.t; s.t = s.tl + sg.tOff; s.i = g.i; s.stage = g.k; return s; },
+    resultRows: comboRows, checks: comboChecks, solution: comboSolution, digest: () => comboDigest(sim) };
+  // 与“当前阶段”有关的属性：随时间自动切换到所属阶段的子模拟
+  ['P', 'isBelt', 'duo', 'boat', 'who', 'xmin', 'xmax', 'vmax', 'x0', 'vc0', 'xr0', 'xc00', 'aLeft', 'collisions', 'meets', 'infoBox', 'render2D'].forEach(key => Object.defineProperty(sim, key, { get() { return stages[sim.cur].sim[key]; } }));
+  const sum = key => stages.reduce((a, sg) => a + (sg.sim.summary[key] || 0), 0), lastSg = stages[stages.length - 1], LS2 = lastSg.sim.summary;
+  sim.summary = { tEnd: lastSg.tOff + LS2.tEnd, tSim: off, xb: LS2.xb, xc: LS2.xc, vb: LS2.vb, vc: LS2.vc, dRel: LS2.dRel, sRel: 0, mark: 0, Q1: sum('Q1'), Q2: sum('Q2'), Wf: sum('Wf'), WFb: sum('WFb'), WFc: sum('WFc'), Wbelt: sum('Wbelt'),
+    tCommon: null, tLeave: null, dEkb: 0, dEkc: 0, dEpb: 0, dEpc: 0, Ecoll: sum('Ecoll'), resid: sum('resid') };
+  sim.tiles = [['总时间', fmt(sim.summary.tEnd) + ' s'], ['阶段数', String(stages.length)], ['摩擦生热合计', fmt(sim.summary.Q1 + sim.summary.Q2) + ' J'], ['最终速度', fmt(LS2.vb) + ' m/s']];
+  return sim;
+}
+function comboRows(sim) {
+  const S = sim.summary, R = [['结束情况', '共 ' + sim.stages.length + ' 个阶段，依次衔接'], ['总时间', fmt(S.tEnd) + ' s'], ['各阶段摩擦生热合计', fmt(S.Q1 + S.Q2) + ' J']];
+  sim.stages.forEach(sg => {
+    R.push(['阶段 ' + (sg.k + 1) + '：' + sg.name, '从 ' + fmt(sg.tOff) + ' s 开始']);
+    if (sg.vIn != null) R.push(['　入口速度（承接上一段）', fmt(sg.vIn) + ' m/s']);
+    resultRows(sg.sim).slice(1, -1).forEach(r => R.push(['　' + r[0], r[1]]));
+  });
+  R.push(['能量守恒残差合计', S.resid.toExponential(1) + ' J']); return R;
+}
+function comboChecks(inp, sim) {
+  const out = [];
+  sim.stages.forEach(sg => {
+    if (sg.vIn != null) out.push({ status: 'info', item: '阶段' + (sg.k + 1) + ' · 衔接', detail: '入口速度 ' + fmt(sg.vIn) + ' m/s：' + LINKS[sg.link] + '。两段的正方向、斜面倾角可能不同，请确认衔接方式符合题意。' });
+    localChecks(sg.inp, sg.sim).forEach(x => out.push({ status: x.status, item: '阶段' + (sg.k + 1) + ' · ' + x.item, detail: x.detail }));
+  });
+  return out;
+}
+function comboSolution(sim) {
+  const steps = [];
+  sim.stages.forEach(sg => {
+    steps.push({ title: '阶段 ' + (sg.k + 1) + '：' + sg.name, items: [{ tag: '衔接', tex: sg.vIn == null ? (sg.k ? '本阶段不承接上一段，按该例题原有的初始条件。' : '第一阶段，按该例题原有的初始条件。')
+      : '上一阶段结束时的速度作为本阶段的初速度：$v_{0} = #' + fx(sg.vIn) + '#$ m/s（' + LINKS[sg.link] + '）' }] });
+    solutionSteps(sg.sim).forEach(s => steps.push({ title: '〔阶段' + (sg.k + 1) + '〕' + s.title, items: s.items }));
+  });
+  return steps;
+}
+function comboDigest(sim) {
+  return { 模型: '例题拼合：多个阶段依次衔接，前一阶段的末速度可作为后一阶段的初速度', 总时间: +sim.summary.tEnd.toFixed(4),
+    阶段: sim.stages.map(sg => ({ 序号: sg.k + 1, 名称: sg.name, 起始时刻: +sg.tOff.toFixed(4), 衔接方式: LINKS[sg.link], 入口速度: sg.vIn == null ? null : +sg.vIn.toFixed(4), 数据: simDigest(sg.cfg, sg.inp.P, sg.sim) })) };
+}
+function renderCombo() {
+  const cfg = App.cfg, el = $('#comboBox'); $('#paramCard').dataset.model = cfg.model;
+  if (cfg.model !== 'combo') { el.innerHTML = ''; return; }
+  const runs = (App.inp && App.inp.P.runs) || [], list = cfg.stages || (cfg.stages = []);
+  let html = '<p class="note" style="margin:0 0 10px">把不同例题按顺序拼成一道多过程综合题：前一段结束时的速度可以作为后一段的初速度。每个阶段引用一份已有配置，点“打开”进入该配置修改参数，改动会自动反映到拼合结果。</p>';
+  html += list.map((s, k) => {
+    const src = App.store.configs.find(x => x.id === s.cfgId), ok = !!(src && src.model !== 'combo'), r = runs[k];
+    return '<div class="stg' + (ok ? '' : ' bad') + '" data-k="' + k + '"><b class="ph-n">' + (k + 1) + '</b><div style="min-width:0"><div class="stg-name">' + esc(ok ? src.name : '（配置已删除）') + (ok ? '<span class="badge">' + MODELS[src.model].short + '</span>' : '') + '</div>' +
+      '<div class="stg-io">' + (r ? mathText((r.vIn != null ? '入口 v₀ = ' + fmt(r.vIn) + ' m/s，' : '') + '出口 v = ' + fmt(r.sim.summary.vb) + ' m/s') : (ok ? '尚未算到这一阶段' : '')) + '</div></div>' +
+      (k ? '<select data-link="' + k + '" aria-label="与上一阶段的衔接方式">' + Object.keys(LINKS).map(key => '<option value="' + key + '"' + (s.link === key ? ' selected' : '') + '>' + LINKS[key] + '</option>').join('') + '</select>' : '') +
+      '<div class="stg-act"><button class="btn mini" data-act="up"' + (k ? '' : ' disabled') + '>上移</button><button class="btn mini" data-act="down"' + (k < list.length - 1 ? '' : ' disabled') + '>下移</button>' +
+      (ok ? '<button class="btn mini" data-act="open">打开</button>' : '') + '<button class="btn mini" data-act="del">移除</button></div></div>';
+  }).join('');
+  html += '<label class="fld"><span>添加阶段（任选已有配置或内置例题）</span><select id="stgAdd"><optgroup label="已有配置">' +
+    App.store.configs.filter(x => x.model !== 'combo').map(x => '<option value="c:' + x.id + '">' + esc(x.name) + '（' + MODELS[x.model].short + '）</option>').join('') + '</optgroup>' +
+    Object.keys(MODELS).filter(id => MODELS[id].presets.length).map(id => '<optgroup label="内置例题 · ' + MODELS[id].short + '">' + MODELS[id].presets.map((p, i) => '<option value="p:' + id + ':' + i + '">' + esc(p.name) + '</option>').join('') + '</optgroup>').join('') +
+    '</select></label><div class="row"><button class="btn pri" data-act="add">＋ 添加到末尾</button></div>';
+  el.innerHTML = html;
+}
+
+/* —— 视图：缩放 / 平移 / 旋转 / 全屏 —— */
+function zoomAt(f, px, py) {   // 以画面上的 (px, py) 为中心缩放
+  const v = App.view, r = $('#scene').getBoundingClientRect(), z1 = clamp(v.zoom * f, 0.25, 16), k = z1 / v.zoom, ax = r.width / 2, ay = r.height * 0.6;
+  v.x = (px - ax) * (1 - k) + k * v.x; v.y = (py - ay) * (1 - k) + k * v.y; v.zoom = z1; App.dirty = true;
+}
+function syncViewUI() {
+  const fs = $('#stageCard').classList.contains('fs');
+  $$('#dimSeg button').forEach(b => b.classList.toggle('on', (b.dataset.d === '3') === App.mode3d));
+  $('#btnDrag').hidden = !App.mode3d; $('#btnDrag').textContent = App.view.drag === 'pan' ? '拖动：平移' : '拖动：旋转';
+  $('#btnFollow').classList.toggle('on', !!App.view.follow); $('#btnFS').textContent = fs ? '退出全屏' : '全屏'; $('#btnFS').classList.toggle('on', fs);
+  $('#scene').classList.toggle('free', App.mode3d || fs);
+}
+function toggleFS(on) {
+  const card = $('#stageCard'), de = document.documentElement, cur = document.fullscreenElement || document.webkitFullscreenElement;
+  on = on == null ? !card.classList.contains('fs') : !!on;
+  card.classList.toggle('fs', on); document.body.classList.toggle('fs-lock', on);
+  try {   // 画面铺满由样式完成；浏览器全屏只是去掉地址栏等，不支持时也不影响使用
+    if (on && !cur) { const rq = de.requestFullscreen || de.webkitRequestFullscreen; if (rq) { const p = rq.call(de); if (p && p.catch) p.catch(() => {}); } }
+    if (!on && cur) { const ex = document.exitFullscreen || document.webkitExitFullscreen; if (ex) { const p = ex.call(document); if (p && p.catch) p.catch(() => {}); } }
+  } catch (e) { /* 忽略 */ }
+  syncViewUI(); App.dirty = true; setTimeout(() => { App.dirty = true; }, 120); setTimeout(() => { App.dirty = true; }, 450);
+}
+function bindV4() {
+  const cv = $('#scene'), pref = LS.get('pbsim.view.v1', null) || {};
+  App.mode3d = !!pref.mode3d;
+  $('#dimSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-d]'); if (!b) return; const was = App.mode3d;
+    App.mode3d = b.dataset.d === '3'; LS.set('pbsim.view.v1', { mode3d: App.mode3d }); syncViewUI(); App.dirty = true;
+    if (App.mode3d && !was) toast('3D 视图：拖动旋转，滚轮 / 双指缩放，Shift 或右键拖动平移');
+  });
+  $('#vTools').addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]'); if (!b) return; const v = App.view, r = cv.getBoundingClientRect(), a = b.dataset.v;
+    if (a === 'fs') { toggleFS(); return; }
+    if (a === 'in') zoomAt(1.25, r.width / 2, r.height * 0.6); else if (a === 'out') zoomAt(0.8, r.width / 2, r.height * 0.6);
+    else if (a === 'fit') Object.assign(v, { zoom: 1, x: 0, y: 0, follow: false });
+    else if (a === 'follow') { v.follow = !v.follow; if (v.follow) { v.x = 0; v.y = 0; } }
+    else if (a === 'drag') v.drag = v.drag === 'pan' ? 'rotate' : 'pan';
+    syncViewUI(); App.dirty = true;
+  });
+  // 拖动：2D 平移；3D 旋转（Shift / 右键 / “拖动：平移”时为平移）；双指缩放并平移
+  const pts = new Map(); let pinch = 0;
+  cv.addEventListener('pointerdown', e => { pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); pinch = 0; try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 忽略 */ } });
+  cv.addEventListener('pointermove', e => {
+    const p = pts.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y, v = App.view; p.x = e.clientX; p.y = e.clientY;
+    if (pts.size >= 2) {
+      const a = Array.from(pts.values()), d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y), r = cv.getBoundingClientRect();
+      if (pinch > 0 && d > 0) zoomAt(d / pinch, (a[0].x + a[1].x) / 2 - r.left, (a[0].y + a[1].y) / 2 - r.top);
+      pinch = d; v.x += dx / 2; v.y += dy / 2;
+    } else if (App.mode3d && v.drag !== 'pan' && !e.shiftKey && e.buttons !== 2) { v.yaw += dx * 0.008; v.pitch = clamp(v.pitch + dy * 0.006, 0.1, 1.45); }
+    else { v.x += dx; v.y += dy; }
+    App.dirty = true;
+  });
+  const release = e => { pts.delete(e.pointerId); pinch = 0; };
+  cv.addEventListener('pointerup', release); cv.addEventListener('pointercancel', release);
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  cv.addEventListener('dblclick', () => { Object.assign(App.view, { zoom: 1, x: 0, y: 0, follow: false, yaw: 0.5, pitch: 0.42 }); syncViewUI(); App.dirty = true; });
+  cv.addEventListener('wheel', e => {   // 2D 普通状态下需按住 Ctrl，避免妨碍页面滚动；3D 或全屏时直接缩放
+    if (!(e.ctrlKey || e.metaKey || App.mode3d || $('#stageCard').classList.contains('fs'))) return;
+    e.preventDefault(); const r = cv.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  const onFsChange = () => { if (!(document.fullscreenElement || document.webkitFullscreenElement) && $('#stageCard').classList.contains('fs')) toggleFS(false); App.dirty = true; };
+  document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#stageCard').classList.contains('fs') && !document.querySelector('dialog[open]')) toggleFS(false); });
+  // 例题拼合
+  $('#btnCombo').addEventListener('click', () => {
+    showView('sim');
+    if (App.cfg.model === 'combo') { toast('当前已是拼合配置：在左侧“添加阶段”即可'); return; }
+    const first = App.cfg, n = newConfig('combo'); n.name = '拼合·' + first.name; n.problem.title = n.name; n.stages = [{ cfgId: first.id, link: 'none' }]; addConfig(n);
+    if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) $('#mTabs button[data-m="param"]').click();
+    toast('已新建拼合配置：「' + first.name + '」为阶段 1，请在左侧继续添加阶段', 'ok');
+  });
+  $('#comboBox').addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b || App.cfg.model !== 'combo') return;
+    const list = App.cfg.stages, row = b.closest('.stg'), k = row ? +row.dataset.k : -1, act = b.dataset.act;
+    if (act === 'add') {
+      const v = $('#stgAdd').value; if (!v) { toast('没有可添加的配置'); return; } let id;
+      if (v.charAt(0) === 'c') id = v.slice(2);
+      else { const a = v.split(':'), n = newConfig(a[1], MODELS[a[1]].presets[+a[2]]); App.store.configs.push(n); id = n.id; renderCfgSel(); }
+      list.push({ cfgId: id, link: 'abs' });
+    } else if (act === 'del') list.splice(k, 1);
+    else if (act === 'up' && k > 0) list.splice(k - 1, 0, list.splice(k, 1)[0]);
+    else if (act === 'down' && k >= 0 && k < list.length - 1) list.splice(k + 1, 0, list.splice(k, 1)[0]);
+    else if (act === 'open') { const src = App.store.configs.find(x => x.id === list[k].cfgId); if (src) { setCurrent(src); toast('已打开「' + src.name + '」：改完后在顶部切回拼合配置即可看到新结果'); } return; }
+    recompute();
+  });
+  $('#comboBox').addEventListener('change', e => { const s = e.target.closest('select[data-link]'); if (!s || App.cfg.model !== 'combo') return; App.cfg.stages[+s.dataset.link].link = s.value; recompute(); });
+  syncViewUI();
+}
+/* 扫描 / 反求的参数下拉：当前模型没有默认项（μ）时自动选中第一项 */
+const refreshSweepFormBase = refreshSweepForm;
+refreshSweepForm = function () { refreshSweepFormBase(); ['swParam', 'invParam'].forEach(id => { const s = $('#' + id); if (s && s.selectedIndex < 0 && s.options.length) s.selectedIndex = 0; }); };
+
 function showView(v) {
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
   $$('.view').forEach(s => s.classList.toggle('on', s.id === 'view-' + v));
@@ -2627,7 +3267,7 @@ function bind() {
   $('#modelSeg').addEventListener('click', e => {
     const b = e.target.closest('button[data-model]'); if (!b || b.dataset.model === App.cfg.model) return;
     const old = App.cfg, n = newConfig(b.dataset.model);
-    MODELS[n.model].params.forEach(p => { if (old.params[p.key] != null && old.params[p.key] !== '') n.params[p.key] = old.params[p.key]; });
+    if (!MODELS[n.model].fresh && !MODELS[old.model].fresh) MODELS[n.model].params.forEach(p => { if (old.params[p.key] != null && old.params[p.key] !== '') n.params[p.key] = old.params[p.key]; });
     n.name = old.name; n.problem = old.problem; n.options = old.options; replaceCurrent(n);
   });
   $('#presetSel').addEventListener('change', e => { if (e.target.value === '') return; const n = newConfig(App.cfg.model, MODELS[App.cfg.model].presets[+e.target.value]); replaceCurrent(n); toast('已载入例题：' + n.name, 'ok'); });
@@ -2748,7 +3388,7 @@ function init() {
     if (same) App.store.currentId = same.id; else { App.store.configs.push(n); App.store.currentId = n.id; }
   }
   if (!App.store.configs.length) { const c = newConfig('belt', MODELS.belt.presets[2]); App.store.configs.push(c); App.store.currentId = c.id; }
-  AI.load(); bind(); bindExtra(); bindV3();
+  AI.load(); bind(); bindExtra(); bindV3(); bindV4();
   setCurrent(App.store.configs.find(c => c.id === App.store.currentId) || App.store.configs[0]);
   renderProviders(); renderPromptEditor(); updatePlayBtn();
   requestAnimationFrame(tick);
