@@ -364,7 +364,10 @@ body.fs-lock{overflow:hidden}
 .stg-io{font-size:11.5px;color:var(--ink2);line-height:2}
 .stg select{grid-column:1/-1;width:100%;min-width:0;border:1px solid var(--line);border-radius:7px;background:#fff;padding:5px 6px;font-size:12px}
 .stg-act{grid-column:1/-1;display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap}
-#paramCard[data-model="combo"] #modelSeg,#paramCard[data-model="combo"] #paramBox,#paramCard[data-model="combo"] .keypad,#paramCard[data-model="combo"] .opts,#paramCard[data-model="combo"]>.fld,#paramCard[data-model="combo"]>.note{display:none}
+#paramCard[data-model="combo"] #modelSeg,#paramCard[data-model="combo"]>.fld,#paramCard[data-model="combo"]>.note{display:none}
+.stg.sel{border-color:var(--navy);box-shadow:inset 3px 0 0 var(--navy)}
+.stg-form{grid-column:1/-1;border-top:1px dashed var(--line2);margin-top:2px;padding-top:4px}
+.stg-form select{padding:6px;font-size:13px}
 </style>
 </head>
 <body>
@@ -392,7 +395,7 @@ body.fs-lock{overflow:hidden}
   <div class="cfg-g">
     <button class="btn pri" id="btnNew">＋ 新建配置</button>
     <button class="btn" id="btnDup">复制</button>
-    <button class="btn" id="btnCombo" title="把多个例题按顺序拼成一道多过程综合题">拼合例题</button>
+    <button class="btn" id="btnCombo" title="把多个例题首尾相接成一条轨道：同一物体依次通过，数据自动衔接，画在同一张图上">拼合例题</button>
     <button class="btn" id="btnDel">删除</button>
   </div>
   <span class="sp"></span>
@@ -640,7 +643,7 @@ body.fs-lock{overflow:hidden}
       <div class="tok" id="promptTok"></div>
       <p class="note">占位符：<code>{{SCHEMA}}</code> 配置结构说明、<code>{{PARAMS}}</code> 可扫描参数、<code>{{METRICS}}</code> 可观测指标，调用时自动替换。</p>
       <details class="note"><summary style="cursor:pointer;font-weight:600">二次开发 / 扩展说明</summary>
-        <p>源码按注册表组织：<code>MODELS</code>（模型与参数定义、例题）、<code>CHARTS</code>（图表）、<code>METRICS</code>（扫描指标）、<code>PROMPTS</code>（提示词）、<code>AI.PRESETS</code>（供应商预设）。新增一条记录即可出现在界面与 AI 提示词中；物理求解集中在 <code>solveContact()</code>、<code>simulate()</code>（传送带 / 板块）与 <code>simulateDuo()</code>（两物块碰撞相遇）。解题过程在 <code>solutionSteps()</code>，力学分析箭头在 <code>renderScene()</code> 的 <code>o.forces</code> 分支。新模型可在 <code>MODELS</code> 条目里自带 <code>simulate / build / normalize / pack</code>，模拟结果对象可自带 <code>resultRows / checks / solution / render2D / infoBox / tiles / names</code> 等钩子（参考人船模型 <code>MODELS.boat</code> 与例题拼合 <code>MODELS.combo</code>）；3D 画法集中在 <code>render3D()</code>。</p>
+        <p>源码按注册表组织：<code>MODELS</code>（模型与参数定义、例题）、<code>CHARTS</code>（图表）、<code>METRICS</code>（扫描指标）、<code>PROMPTS</code>（提示词）、<code>AI.PRESETS</code>（供应商预设）。新增一条记录即可出现在界面与 AI 提示词中；物理求解集中在 <code>solveContact()</code>、<code>simulate()</code>（传送带 / 板块）与 <code>simulateDuo()</code>（两物块碰撞相遇）。解题过程在 <code>solutionSteps()</code>，力学分析箭头在 <code>renderScene()</code> 的 <code>o.forces</code> 分支。新模型可在 <code>MODELS</code> 条目里自带 <code>simulate / build / normalize / pack</code>，模拟结果对象可自带 <code>resultRows / checks / solution / render2D / infoBox / tiles / names</code> 等钩子（参考人船模型 <code>MODELS.boat</code> 与例题拼合 <code>MODELS.combo</code>）；拼合可用的阶段类型在 <code>STAGE_TYPES</code> 注册表里，新增一条（参数表 + <code>make</code> + <code>judge</code>）即可多一种阶段，画法在 <code>renderChain()</code>；3D 画法集中在 <code>render3D()</code>。</p>
       </details>
     </div>
   </div>
@@ -752,7 +755,9 @@ const Expr = (() => {
     const out = []; let i = 0;
     while (i < s.length) {
       const c = s[i];
-      if (/[0-9.]/.test(c)) { let j = i; while (j < s.length && /[0-9.]/.test(s[j])) j++; const n = Number(s.slice(i, j)); if (!isFinite(n)) throw new Error('数字格式错误'); out.push({ t: 'n', v: n }); i = j; }
+      if (/[0-9.]/.test(c)) { let j = i; while (j < s.length && /[0-9.]/.test(s[j])) j++;
+        const em = /^[eE][+-]?\d+/.exec(s.slice(j)); if (em && /\d$/.test(s.slice(i, j))) j += em[0].length;   // 科学计数法：2e-3
+        const n = Number(s.slice(i, j)); if (!isFinite(n)) throw new Error('数字格式错误'); out.push({ t: 'n', v: n }); i = j; }
       else if (/[a-zA-Z]/.test(c)) { let j = i; while (j < s.length && /[a-zA-Z]/.test(s[j])) j++; out.push({ t: 'id', v: s.slice(i, j).toLowerCase() }); i = j; }
       else if ('+-*/^()√°'.indexOf(c) >= 0) { out.push({ t: c }); i++; }
       else throw new Error('无法识别的字符 “' + c + '”');
@@ -1144,7 +1149,8 @@ function stateAt(sim, t) {
   return stateInSeg(sim, g, t);
 }
 /* 分过程文字描述 */
-function dirWord(P, sign) { return P.theta > 1e-9 ? (sign > 0 ? '沿斜面向上' : '沿斜面向下') : (sign > 0 ? '向右' : '向左'); }
+function dirWord(P, sign) { if (P.flip) sign = -sign;   // 组合轨道的“下坡”阶段：状态量已换成以前进方向为正
+  return P.theta > 1e-9 ? (sign > 0 ? '沿斜面向上' : '沿斜面向下') : (sign > 0 ? '向右' : '向左'); }
 function motionWord(v0, a) { if (Math.abs(a) < 1e-9) return Math.abs(v0) < 1e-9 ? '静止' : '匀速'; if (Math.abs(v0) < 1e-9) return '由静止匀加速'; return a * v0 > 0 ? '匀加速' : '匀减速'; }
 function eventLabel(sim, g) {
   const P = sim.P, cn = sim.isBelt ? '传送带' : '木板', inc = P.theta > 1e-9;
@@ -1361,7 +1367,7 @@ function chartSpec(def, sim, t, full) {
 /* 场景动画 */
 function renderScene(ctx, W, H, sim, st, o) {
   o = o || {};
-  if (o.mode === '3d') return render3D(ctx, W, H, sim, st, o);        // 3D 视图
+  if (o.mode === '3d' && !sim.no3D) return render3D(ctx, W, H, sim, st, o);        // 3D 视图
   if (sim.render2D) return sim.render2D(ctx, W, H, sim, st, o);        // 模型自带的 2D 画法（如人船模型）
   const P = sim.P, b = sim.isBelt, th = P.rad, small = W < 480, vw = o.view || {};
   const span = Math.max(sim.xmax - sim.xmin, 1e-6), padX = small ? 28 : 54, padT = H * 0.4, padB = H * 0.17;
@@ -1517,7 +1523,9 @@ function renderModelUI() {
   $('#optCollWrap').hidden = cfg.model !== 'duo'; $('#optColl').value = cfg.options.collision || 'elastic'; $('#btnFlagC').hidden = cfg.model === 'duo';
   $('#btnFlagC').textContent = '只插' + (M.carrier || '载体') + '旗';
   const c = cfg.model === 'belt' ? '带' : '板';
-  const items = cfg.model === 'boat'
+  const items = cfg.model === 'combo'
+    ? [['t', 't', 's'], ['stageNo', '阶段', ''], ['sb', '路程 s', 'm'], ['vb', 'v', 'm/s'], ['ab', 'a', 'm/s²'], ['fb', 'f', 'N'], ['vc', 'v载体', 'm/s'], ['vr', 'v相对', 'm/s'], ['sRel', 's相对', 'm'], ['Qsum', 'Q摩擦', 'J'], ['Ec', 'ΔE碰', 'J'], ['Ekb', 'Ek', 'J']]
+    : cfg.model === 'boat'
     ? [['t', 't', 's'], ['sb', 'x人', 'm'], ['vb', 'v人', 'm/s'], ['ab', 'a人', 'm/s²'], ['sc', 'x船', 'm'], ['vc', 'v船', 'm/s'], ['ac', 'a船', 'm/s²'], ['vr', 'v相对', 'm/s'], ['dRel', '人相对船', 'm'], ['fb', 'f人', 'N'], ['pb', 'p人', 'kg·m/s'], ['pc', 'p船', 'kg·m/s']]
     : cfg.model === 'duo'
     ? [['t', 't', 's'], ['sb', 'xA', 'm'], ['vb', 'vA', 'm/s'], ['ab', 'aA', 'm/s²'], ['sc', 'xB', 'm'], ['vc', 'vB', 'm/s'], ['ac', 'aB', 'm/s²'], ['vr', 'vA−vB', 'm/s'], ['xr', 'xA−xB', 'm'], ['Q1', 'QA', 'J'], ['Q2', 'QB', 'J'], ['Ec', 'ΔE碰', 'J']]
@@ -1623,7 +1631,7 @@ function draw() {
   App.cfg.flags.forEach(f => {
     const el = document.getElementById('fd_' + f.id); if (!el) return;
     if (f.t > st.t + 1e-9) { el.textContent = '尚未插入'; return; }
-    const fs = peekState(sim, f.t); if (fs.stage !== st.stage) { el.textContent = '属于其他阶段'; return; }
+    const fs = peekState(sim, f.t); if (fs.stage !== st.stage && f.anchor !== 'ground') { el.textContent = '属于其他阶段'; return; }
     const fx = f.anchor === 'ground' ? fs.xb : fs.xr + st.xc;
     el.textContent = '物块距此旗 ' + nfix(st.xb - fx, 3) + ' m';
   });
@@ -2994,129 +3002,408 @@ function render3D(ctx, W, H, sim, st, o) {
   sHUD(ctx, W, H, sim, st, '3D 视图 · 拖动旋转');
 }
 
+/* （上一版“引用配置、各算各的”拼合实现已删除；新实现见下方“例题拼合（组合轨道）”） */
+
+
+
+
 /* ---------------------------------------------------------------------
- * 例题拼合：把多份配置按顺序串成一道多过程题
- *   每个阶段引用一份已有配置（改该配置即改拼合结果）；衔接方式决定上一段末速度如何成为本段初速度
+ * 例题拼合（组合轨道）：把若干“阶段”首尾相接成一条连续轨道，全部画在同一张图上
+ *   同一个物体依次通过各阶段；上一阶段出口的速度、质量自动成为下一阶段的入口条件
+ *   STAGE_TYPES 是阶段类型注册表（扩展点）：params 参数表 / make 生成引擎参数 / judge 判定能否通过
+ *   固定面、传送带、加速电场都借用传送带引擎（带速为 0 即固定面，电场力当作外力）；碰撞借用两物块引擎；木板借用板块引擎
  * --------------------------------------------------------------------- */
-const LINKS = {
-  abs: '承接物块末速率，沿本段正方向进入', neg: '承接物块末速率，沿本段负方向进入', keep: '承接物块末速度（保留正负号）',
-  absC: '承接上一段 木板 / 物块B 的末速率（正方向）', none: '不承接（按本例题原有初速度）'
+const CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫', circ = k => CIRC[k] || (k + 1) + '.';
+const sPar = (key, sym, name, unit, def, x) => Object.assign({ key, sym, name, unit, def }, x || {});
+const SP_TH = sPar('theta', 'θ', '倾角', '°', '0', { kind: 'angle', nonneg: true, hint: '0 = 水平' }),
+  SP_DIR = sPar('dir', '', '倾斜方向', '', 'up', { opts: [['up', '上坡（沿斜面向上运动）'], ['down', '下坡（沿斜面向下运动）']], hint: '倾角为 0 时无效' });
+function trigP(P, approx) {
+  P.rad = P.theta * Math.PI / 180; P.sin = Math.sin(P.rad); P.cos = Math.cos(P.rad);
+  if (approx && Math.abs(P.theta - 37) < 1e-7) { P.sin = 0.6; P.cos = 0.8; }
+  if (approx && Math.abs(P.theta - 53) < 1e-7) { P.sin = 0.8; P.cos = 0.6; }
+  if (P.theta < 1e-12) { P.sin = 0; P.cos = 1; }
+  return P;
+}
+/* 轨道类阶段的引擎参数。x：{ theta, mu, vb 带速(以前进方向为正), F 沿前进方向的力 }；下坡时物理坐标从顶端 L 走到 0 */
+function trackP(L, o, x) {
+  const k = o.down ? -1 : 1;
+  return trigP({ model: 'belt', g: o.g, tMax: o.tMax, theta: x.theta || 0, L, m: o.m, mu1: x.mu || 0, beltA: 0, beltV0: 0, FbT: Infinity, afterLeave: 'stop',
+    x0: o.down ? L : 0, v0: k * o.vin || 0, beltV: k * (x.vb || 0) || 0, Fb: k * (x.F || 0) || 0 }, o.approx);
+}
+function judgeTrack(sub, o, L) {
+  const last = sub.events[sub.events.length - 1], lv = sub.endReason === 'leave' && last ? last.type : '';
+  if (lv === (o.down ? 'leaveL' : 'leaveR')) return { ok: true, vout: Math.abs(sub.summary.vb), nSeg: sub.segs.length, dur: sub.tEnd, len: L };
+  return { ok: false, len: L, why: lv ? '物体从入口端退回' : sub.endReason === 'steady' ? '物体停在本阶段内' : '超过单阶段最长时间仍未通过' };
+}
+const STAGE_TYPES = {
+  field: { name: '加速电场', surf: '电场区',
+    params: [sPar('U', 'U', '加速电压', 'V', '4000', { pos: true }), sPar('d', 'd', '极板间距（电场区长度）', 'm', '1', { pos: true }), sPar('q', 'q', '物体电荷量', 'C', '2*10^-3', { pos: true, hint: '可写 2*10^-3 或 2e-3；水平面光滑' })],
+    len: v => v.d, make: (v, o) => trackP(v.d, o, { F: v.q * v.U / v.d }), judge: (sub, v, o) => judgeTrack(sub, o, v.d) },
+  plane: { name: '水平面 / 斜面', surf: '接触面',
+    params: [sPar('L', 'L', '长度', 'm', '2', { pos: true }), SP_TH, SP_DIR, sPar('mu', 'μ', '动摩擦因数', '', '0', { nonneg: true, hint: '0 = 光滑' })],
+    len: v => v.L, make: (v, o) => trackP(v.L, o, v), judge: (sub, v, o) => judgeTrack(sub, o, v.L) },
+  belt: { name: '传送带', surf: '传送带',
+    params: [sPar('L', 'L', '传送带长度', 'm', '6', { pos: true }), SP_TH, SP_DIR, sPar('vb', 'v<sub>带</sub>', '传送带速度', 'm/s', '2', { hint: '正 = 与物体前进方向相同，负 = 迎面运行' }), sPar('mu', 'μ', '动摩擦因数', '', '0.2', { nonneg: true })],
+    len: v => v.L, make: (v, o) => trackP(v.L, o, v), judge: (sub, v, o) => judgeTrack(sub, o, v.L) },
+  hit: { name: '碰撞',
+    params: [sPar('gap', 'x<sub>B</sub>', '前方物块 B 的距离', 'm', '1', { pos: true }), sPar('mB', 'm<sub>B</sub>', '物块 B 的质量', 'kg', '1', { pos: true }), sPar('vB', 'v<sub>B</sub>', 'B 的初速度', 'm/s', '0', { hint: '正 = 与前进方向相同；一般为 0' }),
+      sPar('mu', 'μ', '地面动摩擦因数', '', '0', { nonneg: true }), sPar('coll', '', '碰撞类型', '', 'elastic', { opts: [['elastic', '弹性碰撞'], ['stick', '完全非弹性（粘连）'], ['e', '按恢复系数 e']] }),
+      sPar('e', 'e', '恢复系数', '', '0.5', { nonneg: true, hint: '仅“按恢复系数 e”时使用' }), sPar('track', '', '碰撞后继续跟踪', '', 'B', { opts: [['B', '被撞的物块 B'], ['A', '原来的物体 A']], hint: '粘连时跟踪粘在一起的整体' })],
+    len: v => v.gap,
+    make: (v, o) => trigP({ model: 'duo', g: o.g, tMax: o.tMax, theta: 0, L: v.gap, m: o.m, x0: 0, v0: o.vin, mu1: v.mu, M: v.mB, xB0: v.gap, vB0: v.vB, muB: v.mu, e: v.e, collision: v.coll }, o.approx),
+    judge: (sub, v, o) => {
+      const c = sub.collisions[0]; if (!c) return { ok: false, len: v.gap, why: '没有追上前方物块，未发生碰撞' };
+      const tr = v.coll === 'stick' ? 'AB' : v.track === 'A' ? 'A' : 'B', vout = tr === 'A' ? c.v1 : c.v2, out = { coll: c, track: tr, len: c.x };
+      if (!(vout > 1e-9)) return Object.assign(out, { ok: false, why: '碰撞后被跟踪的物体没有继续向前运动' });
+      return Object.assign(out, { ok: true, vout, mout: tr === 'A' ? o.m : tr === 'B' ? v.mB : o.m + v.mB, nSeg: sub.segs.findIndex(g => g.end === 'hit') + 1, dur: c.t });
+    } },
+  board: { name: '木板（板块）',
+    params: [sPar('L', 'L', '木板长度', 'm', '3', { pos: true }), sPar('M', 'M', '木板质量', 'kg', '3', { pos: true }), sPar('mu1', 'μ<sub>1</sub>', '物体与木板动摩擦因数', '', '0.3', { nonneg: true }), sPar('mu2', 'μ<sub>2</sub>', '木板与地面动摩擦因数', '', '0', { nonneg: true })],
+    len: v => v.L,
+    make: (v, o) => trigP({ model: 'board', g: o.g, tMax: o.tMax, theta: 0, L: v.L, M: v.M, boardV0: 0, mu2: v.mu2, m: o.m, x0: 0, v0: o.vin, mu1: v.mu1, mu3: 0, Fb: 0, FbT: Infinity, Fc: 0, FcT: Infinity, afterLeave: 'stop' }, o.approx),
+    judge: (sub, v) => {
+      const last = sub.events[sub.events.length - 1], lv = sub.endReason === 'leave' && last ? last.type : '', g = sub.segs[sub.segs.length - 1];
+      if (lv === 'leaveR') return { ok: true, vout: sub.summary.vb, nSeg: sub.segs.length, dur: sub.tEnd, len: g.xb1 };
+      return { ok: false, len: Math.max(g.xc1, 0) + v.L, why: lv ? '物体从木板左端退回' : sub.endReason === 'steady' ? '物体与木板共速，没有滑离木板' : '超过单阶段最长时间仍未滑离木板' };
+    } }
 };
+const CHAIN_DEMOS = [
+  { name: '加速电场 → 弹性碰撞 → 传送带', stages: [['field', {}], ['hit', { gap: '1', mB: '1', coll: 'elastic', track: 'B' }], ['belt', { L: '6', vb: '2', mu: '0.2' }]],
+    text: '质量 m=1 kg、电荷量 q=2×10⁻³ C 的带正电物块由静止开始，经电压 U=4000 V 的加速电场（极板间距 d=1 m，水平面光滑）加速后，在光滑水平面上滑行 1 m，与静止的等质量不带电物块 B 发生弹性正碰；碰后 B 滑上以 2 m/s 同向运行、长 6 m 的水平传送带（μ=0.2），g 取 10 m/s²。求：\n(1) 物块离开电场时的速度；\n(2) 碰后 B 的速度；\n(3) B 在传送带上运动的时间和摩擦产生的热量。', answer: '(1) 4 m/s  (2) 4 m/s  (3) 2.5 s，2 J' },
+  { name: '斜面下滑 → 光滑水平面 → 木板', stages: [['plane', { L: '2', theta: '37', dir: 'down', mu: '0.25' }], ['plane', { L: '1', mu: '0' }], ['board', { L: '3', M: '3', mu1: '0.3', mu2: '0' }]],
+    text: '质量 m=1 kg 的物块从倾角 37°、长 2 m 的斜面顶端由静止下滑（μ=0.25），经 1 m 长的光滑水平面后滑上静止在光滑地面上的木板（M=3 kg，长 3 m，μ₁=0.3），g 取 10 m/s²，sin37°=0.6。求物块滑上木板时的速度，以及最终与木板的共同速度。', answer: '滑上木板时 4 m/s；共同速度 1 m/s（相对木板滑行 2 m，未滑离）' },
+  { name: '传送带加速 → 粘连碰撞 → 粗糙水平面', stages: [['belt', { L: '4', vb: '4', mu: '0.4' }], ['hit', { gap: '1', mB: '1', coll: 'stick' }], ['plane', { L: '5', mu: '0.2' }]],
+    text: '质量 m=1 kg 的物块无初速度地放在以 4 m/s 运行、长 4 m 的水平传送带左端（μ=0.4），离开传送带后在光滑水平面上滑行 1 m，与静止的等质量物块 B 碰撞并粘在一起，随后滑上粗糙水平面（μ=0.2），g 取 10 m/s²。求碰后的共同速度和在粗糙面上滑行的距离。', answer: '共同速度 2 m/s；滑行 1 m 后停下' }
+];
 MODELS.combo = {
-  id: 'combo', name: '例题拼合（多阶段串联）', short: '拼合', carrier: '载体', noAI: true, fresh: true, params: [], presets: [],
-  normalize(raw, cfg) {   // 导入时：若引用的配置不在本机，用随文件带来的快照重建
+  id: 'combo', name: '例题拼合（组合轨道）', short: '拼合', carrier: '载体', noAI: true, fresh: true, presets: [],
+  params: [sPar('m', 'm', '物体的初始质量', 'kg', '1', { group: '初始条件', pos: true }), sPar('v0', 'v<sub>0</sub>', '进入第 1 阶段的速度', 'm/s', '0', { group: '初始条件', nonneg: true }),
+    COMMON_PARAMS[0], sPar('tMax', 't<sub>max</sub>', '单个阶段最长模拟时间', 's', '20', { group: '环境', pos: true })],
+  normalize(raw, cfg) {
+    const pool = App.store.configs.concat((LS.get(K_STORE, null) || {}).configs || []);
     cfg.stages = (Array.isArray(raw.stages) ? raw.stages : []).map(s => {
-      if (!s) return null; let id = s.cfgId; const list = App.store.configs;
-      if (!list.some(x => x.id === id) && s.snap && s.snap.model !== 'combo') {
-        const n = normalizeConfig(s.snap), same = list.find(x => x.name === n.name && x.model === n.model && JSON.stringify(x.params) === JSON.stringify(n.params));
-        if (same) id = same.id; else { list.push(n); id = n.id; }
-      }
-      return { cfgId: id, link: LINKS[s.link] ? s.link : 'abs' };
+      if (s && STAGE_TYPES[s.type]) return newStage(s.type, s.vals);
+      const src = s && (s.snap || pool.find(x => x && x.id === s.cfgId)); return src ? stageFromCfg(src) : null;   // 兼容上一版“引用配置”的拼合
     }).filter(Boolean);
   },
-  pack(cfg) {            // 导出时：把各阶段引用的配置一并打包
-    const out = clone(cfg);
-    out.stages = (out.stages || []).map(s => { const r = App.store.configs.find(x => x.id === s.cfgId); return { cfgId: s.cfgId, link: s.link, snap: r ? clone(r) : undefined }; });
-    return out;
-  },
-  build(cfg, P, errors) { // 依次模拟各阶段，并把上一段的末速度按衔接方式交给下一段
-    const runs = [], list = cfg.stages || []; let prev = null; P.runs = runs;
-    if (!list.length) { errors._msg = '这是“例题拼合”配置：请在下方添加至少一个阶段。'; return; }
-    for (let k = 0; k < list.length; k++) {
-      const s = list[k], src = App.store.configs.find(x => x.id === s.cfgId);
-      if (!src || src.model === 'combo') { errors._msg = '阶段 ' + (k + 1) + ' 引用的配置已不存在，请移除后重新添加。'; break; }
-      const one = clone(src), hasV0 = MODELS[one.model].params.some(p => p.key === 'v0'); let vIn = null;
-      if (prev && s.link !== 'none' && hasV0) {
-        const S = prev.sim.summary; vIn = s.link === 'keep' ? S.vb : s.link === 'neg' ? -Math.abs(S.vb) : s.link === 'absC' ? Math.abs(S.vc) : Math.abs(S.vb);
-        if (Math.abs(vIn) < 1e-9) vIn = 0;
-        one.params.v0 = nfix(vIn, 10);   // 写成普通小数（表达式解析器不认科学计数法）
-      }
-      const inp = buildInput(one);
-      if (!inp.ok) { errors._msg = '阶段 ' + (k + 1) + '「' + src.name + '」的参数有误，请点“打开”进入该配置修正。'; break; }
-      const sub = simulate(inp.P);
-      if (!sub.segs.length) { errors._msg = '阶段 ' + (k + 1) + '「' + src.name + '」在 t = 0 时就已结束（物块立即离开），无法拼合。'; break; }
-      prev = { cfg: one, name: src.name, link: k ? s.link : 'none', vIn, inp, sim: sub }; runs.push(prev);
-    }
-    Expr.setApprox(cfg.options.approx37 !== false);
-  },
-  simulate(P) { return simulateCombo(P); }
-};
-function simulateCombo(P) {
-  const stages = [], segs = [], phases = [], samples = [], events = [], NANS = ['sb', 'vb', 'ab', 'sc', 'vc', 'ac', 'dRel', 'sRel', 'fb', 'f2', 'Q1', 'Q2', 'Ekb', 'Ekc', 'dEp', 'pb', 'pc', 'xb', 'xc', 'Ec']; let off = 0;
-  P.runs.forEach((r, k) => {
-    const sub = r.sim, lastStage = k === P.runs.length - 1, tag = '〔阶段' + (k + 1) + '〕';
-    let list = sub.segs; if (!lastStage && sub.endReason === 'steady' && list.length > 1) list = list.slice(0, -1);   // 非末段：去掉“稳定之后”的尾巴
-    const dur = list[list.length - 1].t1, n0 = segs.length;
-    list.forEach((g, j) => {
-      const cg = Object.assign({}, g, { t0: g.t0 + off, t1: g.t1 + off, i: segs.length, k, sub: g }), ph = sub.phases[j];
-      phases.push({ title: tag + ph.title, lines: ph.lines, end: ph.end + (j === list.length - 1 && !lastStage ? ' → 进入阶段 ' + (k + 2) : '') });
-      segs.push(cg); events.push({ t: cg.t1, type: g.end });
-      for (let q = 0; q <= 20; q++) { const s = stateInSeg(sub, g, g.t0 + (g.t1 - g.t0) * q / 20); s.tl = s.t; s.t += off; s.i = cg.i; s.stage = k; samples.push(s); }
+  /* 逐阶段模拟：把上一阶段出口的质量 m、速度 v 交给下一阶段 */
+  build(cfg, P, errors) {
+    const list = cfg.stages || [], approx = cfg.options.approx37 !== false, runs = P.runs = [];
+    let m = P.m, vin = P.v0, alive = !Object.keys(errors).length;
+    list.forEach((s, k) => {
+      const T = STAGE_TYPES[s.type], v = {}, er = {};
+      T.params.forEach(p => {
+        const raw = String(s.vals[p.key] == null ? p.def : s.vals[p.key]).trim();
+        if (p.opts) { v[p.key] = p.opts.some(x => x[0] === raw) ? raw : p.def; return; }
+        try { const x = evalParam(p, raw); if (p.pos && !(x > 0)) throw new Error('必须大于 0'); if (p.nonneg && x < 0) throw new Error('不能为负'); if (p.kind === 'angle' && !(x < 90)) throw new Error('倾角需小于 90°'); v[p.key] = x; }
+        catch (e) { er[p.key] = e.message; }
+      });
+      const r = { k, s, T, v, er, bad: Object.keys(er).length > 0 }; runs.push(r);
+      if (r.bad) { if (!errors._msg) errors._msg = '阶段 ' + (k + 1) + '（' + T.name + '）的参数填写有误，请点“参数”展开修改。'; alive = false; }
+      if (!alive) return;
+      const o = { g: P.g, tMax: P.tMax, approx, m, vin, down: v.dir === 'down' && v.theta > 1e-9 }, Ps = T.make(v, o), sub = simulate(Ps);
+      if (!sub.segs.length) { errors._msg = '阶段 ' + (k + 1) + '（' + T.name + '）：物体一进入就被送回入口，无法模拟，请调整该阶段参数。'; alive = false; return; }
+      if (o.down) Ps.flip = true;
+      if (s.type === 'field' || s.type === 'plane') sub.who = { a: '物', c: '面', A: '物体', C: T.surf };
+      Object.assign(r, { P: Ps, sub, min: m, vin }, T.judge(sub, v, o)); if (r.mout == null) r.mout = m;
+      if (r.ok) { m = r.mout; vin = r.vout; } else alive = false;
     });
-    if (!lastStage) { const br = { t: off + dur }; NANS.forEach(key => { br[key] = NaN; }); samples.push(br); }   // 阶段之间断开曲线
-    stages.push({ k, sim: sub, cfg: r.cfg, inp: r.inp, name: r.name, link: r.link, vIn: r.vIn, tOff: off, dur, n0, n: list.length });
-    off += dur;
+    if (!list.length) errors._msg = '这是“例题拼合”配置：请在下方添加阶段，或载入一条示例组合。';
+  },
+  simulate(P) { return simulateChain(P); }
+};
+function newStage(type, vals) { const v = {}; STAGE_TYPES[type].params.forEach(p => { v[p.key] = vals && vals[p.key] != null ? String(vals[p.key]) : p.def; }); return { id: uid(), type, vals: v }; }
+/* 把一份例题 / 配置转换成阶段：保留装置参数，初速度和质量改由上一阶段传入 */
+function stageFromCfg(c) {
+  const p = c.params || {}, str = (k, d) => (p[k] != null && String(p[k]).trim() !== '') ? String(p[k]) : d, num = (k, d) => { try { const x = Expr.eval(String(p[k])); return isFinite(x) ? x : d; } catch (e) { return d; } };
+  if (c.model === 'belt') { const back = num('x0', 0) > num('L', 10) / 2;   // 原题从右端 / 顶端出发：换成“下坡”或“迎面运行”
+    return newStage('belt', { L: str('L', '6'), theta: str('theta', '0'), dir: back ? 'down' : 'up', vb: back ? '-(' + str('beltV', '0') + ')' : str('beltV', '0'), mu: str('mu1', '0.2') }); }
+  if (c.model === 'board') return newStage('board', { L: str('L', '3'), M: str('M', '2'), mu1: str('mu1', '0.3'), mu2: str('mu2', '0') });
+  if (c.model === 'duo') { const gap = Math.abs(num('xB0', 1) - num('x0', 0)), col = (c.options || {}).collision;
+    return newStage('hit', { gap: gap > 1e-9 ? nfix(gap, 6) : '1', mB: str('M', '1'), vB: str('vB0', '0'), mu: str('mu1', '0'), coll: col === 'stick' || col === 'e' ? col : 'elastic', e: str('e', '0.5'), track: 'B' }); }
+  return null;
+}
+function loadDemo(cfg, i) {
+  const d = CHAIN_DEMOS[i] || CHAIN_DEMOS[0]; cfg.stages = d.stages.map(x => newStage(x[0], x[1])); cfg.params.m = '1'; cfg.params.v0 = '0';
+  cfg.name = '拼合·' + d.name; cfg.problem = { title: cfg.name, text: d.text || '', answer: d.answer || '', analysis: '' }; App.stageSel = cfg.stages[0].id;
+}
+/* 阶段内的局部状态 → 全局状态：时间、路程连续，速度等以前进方向为正，热量等逐段累计；原始值保留在 loc 中供绘图使用 */
+function chainState(sg, s, i) {
+  const n = sg.sgn; s.loc = { xb: s.xb, xc: s.xc, on: s.on, rMin: s.rMin, rMax: s.rMax };
+  s.tl = s.t; s.t += sg.tOff; s.i = i; s.stage = sg.k; s.stageNo = sg.k + 1;
+  s.xb = sg.S0 + n * (s.loc.xb - sg.x0loc); s.xc = sg.type === 'hit' ? sg.S0 + s.loc.xc : n * s.loc.xc || 0; s.xr = s.xb - s.xc; s.sb = s.xb; s.sc = n * s.sc || 0;
+  if (n < 0) ['vb', 'ab', 'vc', 'ac', 'vr', 'fb', 'f1', 'f2', 'Fb', 'Fc', 'pb', 'pc', 'dRel'].forEach(key => { s[key] = -s[key] || 0; });
+  s.Q1 += sg.pre.Q1; s.Q2 += sg.pre.Q2; s.sRel += sg.pre.sR; s.dEp += sg.pre.dEp; s.Ec = (s.Ec || 0) + sg.pre.Ec; s.Qsum = s.Q1 + s.Q2;
+  return s;
+}
+function simulateChain(P) {
+  const stages = [], segs = [], phases = [], samples = [], events = [], pre = { Q1: 0, Q2: 0, Ec: 0, sR: 0, dEp: 0 }, bb = { x0: 0, x1: 0, y0: 0, y1: 0 }, sum = { Wf: 0, WFb: 0, Wbelt: 0, resid: 0 };
+  let off = 0, S0 = 0, O = [0, 0], body = [{ off: -1, col: COL.block, edge: '#a13a0a', lab: 'm' }], front = 0, nB = 0, vmax = 1e-6, mark = 0, stopAt = -1;
+  P.runs.forEach((r, k) => {
+    const T = r.T, v = r.v, sub = r.sub, down = v.dir === 'down' && v.theta > 1e-9, rad = (v.theta || 0) * Math.PI / 180 * (down ? -1 : 1), len = r.len == null ? T.len(v) : r.len;
+    // 版面：阶段起点 O、前进方向 ux、几何长度 len、路程起点 S0；body 是“被跟踪物体”的画法（碰撞后可能换成 B 或粘连体）
+    const sg = { k, type: r.s.type, T, v, vals: r.s.vals, name: T.name, reached: !!sub, ok: !!r.ok, why: r.why || '', O, ux: [Math.cos(rad), Math.sin(rad)], len, S0, tOff: off, dur: 0, dQ: 0, sgn: down ? -1 : 1,
+      x0loc: sub ? sub.x0 : (down ? len : 0), sub, P: r.P, pre: Object.assign({}, pre), min: r.min, vin: r.vin, mout: r.mout, vout: r.vout, coll: r.coll, track: r.track, body, front };
+    if (sg.type === 'hit') sg.bPart = { off: front, col: COL.carrier, edge: '#0b4f8a', lab: 'B' + (++nB > 1 ? nB : '') };
+    stages.push(sg); O = [O[0] + len * sg.ux[0], O[1] + len * sg.ux[1]]; S0 += len;
+    bb.x0 = Math.min(bb.x0, O[0]); bb.x1 = Math.max(bb.x1, O[0]); bb.y0 = Math.min(bb.y0, O[1]); bb.y1 = Math.max(bb.y1, O[1]);
+    if (!sub) return;
+    const list = r.ok ? sub.segs.slice(0, r.nSeg) : sub.segs, dur = r.ok ? r.dur : sub.tEnd, last = list[list.length - 1], plainT = sg.type === 'field' || sg.type === 'plane';
+    const raw = (g, t) => { const s = stateInSeg(sub, g, t); return { xb: s.xb, xc: s.xc, on: s.on, rMin: s.rMin, rMax: s.rMax, Q1: s.Q1, Q2: s.Q2, sRel: s.sRel, dEp: s.dEp }; };
+    sg.dur = dur; sg.loc0 = raw(list[0], list[0].t0); sg.loc1 = raw(last, last.t1); sg.dQ = sg.loc1.Q1 + sg.loc1.Q2; vmax = Math.max(vmax, sub.vmax);
+    list.forEach((g, j) => {
+      const cg = Object.assign({}, g, { t0: g.t0 + off, t1: g.t1 + off, i: segs.length, k, sub: g }), ph = sub.phases[j], fin = j === list.length - 1;
+      let title = ph.title, lines = ph.lines, end = ph.end;
+      if (plainT) { title = title.split('，传送带')[0]; lines = lines.filter(l => !/^(传送带：|物块相对|物块与)/.test(l)); end = end.replace(/传送带/g, T.surf); }
+      if (down && !j) lines = ['本阶段沿斜面向下前进，下面的速度、加速度仍以沿斜面向上为正'].concat(lines);
+      if (fin) end = !r.ok ? end + '（' + r.why + '，流程到此结束）'
+        : (sg.type === 'hit' ? end + '；之后跟踪' + { A: '原物体 A', B: '物块 B', AB: '粘连后的整体' }[r.track] : '通过本阶段，出口速度 ' + fmt(r.vout) + ' m/s') + (P.runs[k + 1] ? ' → 进入阶段 ' + (k + 2) : '');
+      phases.push({ title: '〔' + circ(k) + sg.name + '〕' + title, lines, end }); segs.push(cg); events.push({ t: cg.t1, type: g.end });
+      for (let q = 0; q <= 20; q++) samples.push(chainState(sg, stateInSeg(sub, g, g.t0 + (g.t1 - g.t0) * q / 20), cg.i));
+    });
+    pre.Q1 += sg.loc1.Q1; pre.Q2 += sg.loc1.Q2; pre.sR += sg.loc1.sRel; pre.dEp += sg.loc1.dEp; pre.Ec += r.ok ? (r.coll ? r.coll.loss : 0) : (sub.summary.Ecoll || 0);
+    if (sg.type === 'belt' || sg.type === 'board') mark += sg.loc1.rMax - sg.loc1.rMin;
+    if (sg.type !== 'hit') { sum.Wf += sub.summary.Wf; sum.WFb += sub.summary.WFb; sum.Wbelt += sub.summary.Wbelt; }
+    sum.resid += Math.abs(sub.summary.resid);
+    if (r.ok && sg.type === 'hit') { if (r.track === 'B') body = [sg.bPart]; else if (r.track === 'AB') body = body.concat([sg.bPart]); if (r.track !== 'A') front++; }
+    const nx = P.runs[k + 1];   // 阶段之间：物体的曲线连续，载体（带 / 板 / B）的曲线断开
+    if (nx && nx.sub) { const br = Object.assign({}, samples[samples.length - 1]); ['vc', 'sc', 'ac', 'f2', 'Ekc', 'pc', 'dRel'].forEach(key => { br[key] = NaN; }); samples.push(br); }
+    off += dur; if (!r.ok) stopAt = k;
   });
-  const sim = { combo: true, cur: 0, stages, segs, phases, samples, events, tEnd: off, endReason: P.runs[P.runs.length - 1].sim.endReason,
-    names: { '@': '载体', '木板': '载体', 'Ek板': 'Ek载体', '地面对板f': '地面对载体f', 'Q(物块-@)': 'Q(物块-载体)' },
-    stateInSeg(g, t) { const sg = stages[g.k]; sim.cur = g.k; const s = stateInSeg(sg.sim, g.sub, t - sg.tOff); s.tl = s.t; s.t = s.tl + sg.tOff; s.i = g.i; s.stage = g.k; return s; },
-    resultRows: comboRows, checks: comboChecks, solution: comboSolution, digest: () => comboDigest(sim) };
-  // 与“当前阶段”有关的属性：随时间自动切换到所属阶段的子模拟
-  ['P', 'isBelt', 'duo', 'boat', 'who', 'xmin', 'xmax', 'vmax', 'x0', 'vc0', 'xr0', 'xc00', 'aLeft', 'collisions', 'meets', 'infoBox', 'render2D'].forEach(key => Object.defineProperty(sim, key, { get() { return stages[sim.cur].sim[key]; } }));
-  const sum = key => stages.reduce((a, sg) => a + (sg.sim.summary[key] || 0), 0), lastSg = stages[stages.length - 1], LS2 = lastSg.sim.summary;
-  sim.summary = { tEnd: lastSg.tOff + LS2.tEnd, tSim: off, xb: LS2.xb, xc: LS2.xc, vb: LS2.vb, vc: LS2.vc, dRel: LS2.dRel, sRel: 0, mark: 0, Q1: sum('Q1'), Q2: sum('Q2'), Wf: sum('Wf'), WFb: sum('WFb'), WFc: sum('WFc'), Wbelt: sum('Wbelt'),
-    tCommon: null, tLeave: null, dEkb: 0, dEkc: 0, dEpb: 0, dEpc: 0, Ecoll: sum('Ecoll'), resid: sum('resid') };
-  sim.tiles = [['总时间', fmt(sim.summary.tEnd) + ' s'], ['阶段数', String(stages.length)], ['摩擦生热合计', fmt(sim.summary.Q1 + sim.summary.Q2) + ' J'], ['最终速度', fmt(LS2.vb) + ' m/s']];
+  const lastSg = stages.filter(x => x.reached).pop(), allOk = stopAt < 0, endS = samples[samples.length - 1];
+  const sim = { combo: true, no3D: true, cur: 0, stages, segs, phases, samples, events, tEnd: off, endReason: allOk ? 'leave' : lastSg.sub.endReason, bbox: bb, vmaxAll: vmax, stopAt,
+    names: { '物块': '物体', '@': '载体 / B', '木板': '载体 / B', '相对Δx': '相对位移', '物块受f': '物体受f', '地面对板f': '地面对载体f', 'Q(物块-@)': 'Q(物体)', 'Q(地面)': 'Q(其他)', 'Ek物': 'Ek物体', 'Ek板': 'Ek载体', 'Q总': 'Q+ΔE碰' },
+    render2D: renderChain, resultRows: chainRows, checks: chainChecks, solution: chainSolution };
+  sim.stateInSeg = (g, t) => { const sg = stages[g.k]; sim.cur = g.k; return chainState(sg, stateInSeg(sg.sub, g.sub, t - sg.tOff), g.i); };
+  sim.infoBox = st => chainBox(sim, st); sim.digest = () => chainDigest(sim);
+  // 与“当前阶段”有关的属性（P、isBelt、duo…）：随时间自动指向所在阶段的子模拟，通用面板因此无需改动
+  ['P', 'isBelt', 'duo', 'boat', 'who', 'x0', 'vc0', 'xr0', 'xc00', 'aLeft', 'collisions', 'meets', 'vmax', 'xmin', 'xmax'].forEach(key => Object.defineProperty(sim, key, { get() { return stages[sim.cur].sub[key]; } }));
+  const S = { tEnd: allOk || lastSg.sub.endReason !== 'steady' ? off : lastSg.tOff + lastSg.sub.summary.tEnd, tSim: off, xb: endS.sb, xc: 0, vb: allOk ? lastSg.vout : endS.vb, vc: 0, dRel: 0, sRel: pre.sR, mark,
+    Q1: pre.Q1, Q2: pre.Q2, Wf: sum.Wf, WFb: sum.WFb, WFc: 0, Wbelt: sum.Wbelt, tCommon: null, tLeave: null, dEkb: 0, dEkc: 0, dEpb: 0, dEpc: 0, Ecoll: pre.Ec, resid: sum.resid };
+  sim.summary = S;
+  sim.tiles = [['总时间', fmt(S.tEnd) + ' s'], ['完成阶段', stages.filter(x => x.ok).length + ' / ' + stages.length], ['最终速度', fmt(S.vb) + ' m/s'], ['摩擦生热合计', fmt(S.Q1 + S.Q2) + ' J']];
   return sim;
 }
-function comboRows(sim) {
-  const S = sim.summary, R = [['结束情况', '共 ' + sim.stages.length + ' 个阶段，依次衔接'], ['总时间', fmt(S.tEnd) + ' s'], ['各阶段摩擦生热合计', fmt(S.Q1 + S.Q2) + ' J']];
+function chainRows(sim) {
+  const S = sim.summary, stop = sim.stopAt >= 0 ? sim.stages[sim.stopAt] : null, R = [];
+  R.push(['流程', stop ? '在阶段 ' + (stop.k + 1) + '（' + stop.name + '）结束：' + stop.why : '全部 ' + sim.stages.length + ' 个阶段依次通过']);
+  R.push(['总时间', fmt(S.tEnd) + ' s'], ['总路程', fmt(S.xb) + ' m'], ['最终速度', fmt(S.vb) + ' m/s'], ['摩擦生热合计', fmt(S.Q1 + S.Q2) + ' J']);
+  if (sim.stages.some(x => x.type === 'hit')) R.push(['碰撞损失机械能合计', fmt(S.Ecoll) + ' J']);
   sim.stages.forEach(sg => {
-    R.push(['阶段 ' + (sg.k + 1) + '：' + sg.name, '从 ' + fmt(sg.tOff) + ' s 开始']);
-    if (sg.vIn != null) R.push(['　入口速度（承接上一段）', fmt(sg.vIn) + ' m/s']);
-    resultRows(sg.sim).slice(1, -1).forEach(r => R.push(['　' + r[0], r[1]]));
+    R.push([circ(sg.k) + ' ' + sg.name, sg.reached ? 't = ' + fmt(sg.tOff) + ' s 进入' : '未到达']); if (!sg.reached) return;
+    R.push(['　入口：速度 / 质量', fmt(sg.vin) + ' m/s / ' + fmt(sg.min) + ' kg']);
+    R.push(sg.ok ? ['　出口：速度 / 质量', fmt(sg.vout) + ' m/s / ' + fmt(sg.mout) + ' kg'] : ['　结果', sg.why]);
+    R.push(['　用时 / 摩擦生热', fmt(sg.dur) + ' s / ' + fmt(sg.dQ) + ' J']);
   });
   R.push(['能量守恒残差合计', S.resid.toExponential(1) + ' J']); return R;
 }
-function comboChecks(inp, sim) {
-  const out = [];
-  sim.stages.forEach(sg => {
-    if (sg.vIn != null) out.push({ status: 'info', item: '阶段' + (sg.k + 1) + ' · 衔接', detail: '入口速度 ' + fmt(sg.vIn) + ' m/s：' + LINKS[sg.link] + '。两段的正方向、斜面倾角可能不同，请确认衔接方式符合题意。' });
-    localChecks(sg.inp, sg.sim).forEach(x => out.push({ status: x.status, item: '阶段' + (sg.k + 1) + ' · ' + x.item, detail: x.detail }));
+function chainChecks(inp, sim) {
+  const out = [], st = sim.stages, fixT = (sg, t) => sg.type === 'field' || sg.type === 'plane' ? String(t).replace(/传送带/g, sg.T.surf) : t; let gap = 0;
+  st.forEach((sg, k) => { const nx = st[k + 1]; if (sg.ok && nx && nx.reached) gap = Math.max(gap, Math.abs(nx.vin - sg.vout), Math.abs(nx.min - sg.mout)); });
+  out.push({ status: gap < 1e-9 ? 'pass' : 'fail', item: '阶段衔接：上一阶段出口的速度、质量 = 下一阶段入口', detail: st.filter(x => x.reached).map(sg => circ(sg.k) + ' v ' + nfix(sg.vin, 3) + ' → ' + (sg.ok ? nfix(sg.vout, 3) : '✗') + ' m/s').join('；') });
+  if (sim.stopAt >= 0 && sim.stopAt < st.length - 1) out.push({ status: 'warn', item: '流程没有走完', detail: '在阶段 ' + (sim.stopAt + 1) + '（' + st[sim.stopAt].name + '）结束：' + st[sim.stopAt].why + '；后面 ' + (st.length - 1 - sim.stopAt) + ' 个阶段没有进行。' });
+  st.forEach(sg => {
+    if (!sg.reached) return; const list = sg.type === 'hit' ? duoChecks({ P: sg.P }, sg.sub) : localChecks({ P: sg.P }, sg.sub), np = list.filter(x => x.status !== 'pass');
+    out.push({ status: np.some(x => x.status === 'fail') ? 'fail' : 'pass', item: circ(sg.k) + ' ' + sg.name + '：摩擦约束、牛顿定律、能量守恒等 ' + (list.length - np.length) + ' / ' + list.length + ' 项通过', detail: '入口 v = ' + nfix(sg.vin, 3) + ' m/s，m = ' + nfix(sg.min, 3) + ' kg' + (sg.ok ? '；出口 v = ' + nfix(sg.vout, 3) + ' m/s' : '；' + sg.why) });
+    np.forEach(x => out.push({ status: x.status, item: circ(sg.k) + ' ' + fixT(sg, x.item), detail: fixT(sg, x.detail) }));
   });
   return out;
 }
-function comboSolution(sim) {
-  const steps = [];
+function chainSolution(sim) {
+  const steps = [], who = { A: '原物体 A', B: '物块 B', AB: '粘在一起的整体' };
+  steps.push({ title: '组合轨道：各阶段的衔接', items: [{ tag: '思路', tex: '同一物体依次通过各阶段；上一阶段出口的速度（和质量）就是下一阶段的入口条件，逐段求解。速度以前进方向为正。' }]
+    .concat(sim.stages.map(sg => ({ tag: circ(sg.k) + sg.name, tex: !sg.reached ? '未到达' : '入口 $v = ' + fx(sg.vin) + '$ m/s，$m = ' + fx(sg.min) + '$ kg ⇒ ' + (sg.ok ? '出口 $v = #' + fx(sg.vout) + '#$ m/s' + (sg.mout !== sg.min ? '，$m = #' + fx(sg.mout) + '#$ kg' : '') : sg.why) }))) });
   sim.stages.forEach(sg => {
-    steps.push({ title: '阶段 ' + (sg.k + 1) + '：' + sg.name, items: [{ tag: '衔接', tex: sg.vIn == null ? (sg.k ? '本阶段不承接上一段，按该例题原有的初始条件。' : '第一阶段，按该例题原有的初始条件。')
-      : '上一阶段结束时的速度作为本阶段的初速度：$v_{0} = #' + fx(sg.vIn) + '#$ m/s（' + LINKS[sg.link] + '）' }] });
-    solutionSteps(sg.sim).forEach(s => steps.push({ title: '〔阶段' + (sg.k + 1) + '〕' + s.title, items: s.items }));
+    if (!sg.reached) return; const head = '〔' + circ(sg.k) + sg.name + '〕', v = sg.v, m = sg.min, plainT = sg.type === 'field' || sg.type === 'plane', fixS = t => plainT ? String(t).replace(/传送带/g, sg.T.surf) : t;
+    if (sg.type === 'field') { const F = v.q * v.U / v.d;
+      steps.push({ title: head + '带电物体在电场中加速', items: [
+        { tag: '电场力', tex: '$F = qE = {qU}//{d} = {' + fx(v.q * v.U) + '}//{' + fx(v.d) + '} = #' + fx(F) + '#$ N' },
+        { tag: '加速度', tex: '$a = {F}//{m} = {' + fx(F) + '}//{' + fx(m) + '} = #' + fx(F / m) + '#$ m/s²' },
+        { tag: '动能定理', tex: '$qU = ½mv^2 − ½mv_{0}^2$ ⇒ $v = #' + fx(sg.vout) + '#$ m/s' },
+        { tag: '用时', tex: '$t = {v − v_{0}}//{a} = #' + fx(sg.dur) + '#$ s' }] }); return; }
+    if (sg.type === 'hit') { const c = sg.coll, I = [{ tag: '靠近', tex: '物体 A 以 $v = ' + fx(sg.vin) + '$ m/s 运动' + (v.mu > 0 ? '（地面 $μ = ' + fx(v.mu) + '$）' : '') + '，物块 B 在前方 ' + fx(v.gap) + ' m 处' }];
+      if (!c) I.push({ tag: '结果', tex: sg.why });
+      else {
+        I.push({ tag: '相碰', tex: '经 $t = #' + fx(c.t) + '#$ s 相碰，碰前 $v_1 = ' + fx(c.u1) + '$ m/s，$v_2 = ' + fx(c.u2) + '$ m/s' });
+        I.push({ tag: '动量守恒', tex: '$m_{A}v_1 + m_{B}v_2 = m_{A}v_1′ + m_{B}v_2′$' });
+        I.push(v.coll === 'elastic' ? { tag: '机械能守恒', tex: '$½m_{A}v_1^2 + ½m_{B}v_2^2 = ½m_{A}v_1′^2 + ½m_{B}v_2′^2$' } : v.coll === 'stick' ? { tag: '碰后共速', tex: '$v_1′ = v_2′ = {m_{A}v_1 + m_{B}v_2}//{m_A + m_B}$' } : { tag: '恢复系数', tex: '$v_2′ − v_1′ = e(v_1 − v_2)$，其中 $e = ' + fx(c.e) + '$' });
+        I.push({ tag: '解得', tex: '$v_1′ = #' + fx(c.v1) + '#$ m/s，$v_2′ = #' + fx(c.v2) + '#$ m/s；损失机械能 $ΔE = #' + fx(c.loss) + '#$ J' });
+        I.push({ tag: '衔接', tex: sg.ok ? '之后跟踪' + who[sg.track] + '：$v = #' + fx(sg.vout) + '#$ m/s，$m = #' + fx(sg.mout) + '#$ kg' : sg.why });
+      }
+      steps.push({ title: head + '碰撞', items: I }); return; }
+    solutionSteps(sg.sub).forEach((s, n) => {
+      let items = s.items.filter(it => !(plainT && (it.tag === '传送带' || it.tag === '能量守恒'))).map(it => ({ tag: it.tag, tex: fixS(it.tex) }));
+      if (!n && sg.sgn < 0) items = [{ tag: '说明', tex: '本阶段沿斜面向下前进；下列各式仍以沿斜面向上为正，所以速度、位移为负。' }].concat(items);
+      steps.push({ title: head + fixS(s.title), items });
+    });
   });
   return steps;
 }
-function comboDigest(sim) {
-  return { 模型: '例题拼合：多个阶段依次衔接，前一阶段的末速度可作为后一阶段的初速度', 总时间: +sim.summary.tEnd.toFixed(4),
-    阶段: sim.stages.map(sg => ({ 序号: sg.k + 1, 名称: sg.name, 起始时刻: +sg.tOff.toFixed(4), 衔接方式: LINKS[sg.link], 入口速度: sg.vIn == null ? null : +sg.vIn.toFixed(4), 数据: simDigest(sg.cfg, sg.inp.P, sg.sim) })) };
+function chainDigest(sim) {
+  const r = x => (x == null || !isFinite(x)) ? null : +(+x).toFixed(4), S = sim.summary;
+  return { 模型: '例题拼合（组合轨道）：同一物体依次通过各阶段，上一阶段出口的速度、质量是下一阶段的入口条件；速度以前进方向为正', 总时间: r(S.tEnd), 最终速度: r(S.vb), 摩擦生热合计: r(S.Q1 + S.Q2), 碰撞损失机械能: r(S.Ecoll),
+    阶段: sim.stages.map(sg => ({ 序号: sg.k + 1, 类型: sg.name, 参数: sg.vals, 状态: !sg.reached ? '未到达' : sg.ok ? '通过' : sg.why, 进入时刻: r(sg.tOff), 入口速度: r(sg.vin), 入口质量: r(sg.min), 出口速度: r(sg.vout), 出口质量: sg.ok ? r(sg.mout) : null, 用时: r(sg.dur), 摩擦生热: r(sg.dQ),
+      碰撞: sg.coll ? { 时刻: r(sg.tOff + sg.coll.t), A碰前: r(sg.coll.u1), B碰前: r(sg.coll.u2), A碰后: r(sg.coll.v1), B碰后: r(sg.coll.v2), 机械能损失: r(sg.coll.loss), 之后跟踪: sg.track } : undefined,
+      过程: sim.segs.filter(g => g.k === sg.k).map(g => ({ 时间段: [r(g.t0), r(g.t1)], 概述: sim.phases[g.i].title, a: r(g.ab * sg.sgn), v始: r(g.vb0 * sg.sgn), v末: r(g.vb1 * sg.sgn), 结束: sim.phases[g.i].end })) })) };
 }
+function chainBox(sim, st) {
+  return '<b>数据关联</b>（同一物体依次通过）' + sim.stages.map(sg => '<br>' + (sg.k === st.stage ? '▶ ' : '　') + circ(sg.k) + ' ' + sg.name + '：' + (!sg.reached ? '未到达'
+    : 'v ' + nfix(sg.vin, 3) + ' → ' + (sg.ok ? nfix(sg.vout, 3) : '✗') + ' m/s' + (sg.ok && sg.mout !== sg.min ? '，m ' + nfix(sg.min, 3) + ' → ' + nfix(sg.mout, 3) + ' kg' : ''))).join('') +
+    '<br>此刻：路程 <b>' + nfix(st.sb, 3) + ' m</b>，速度 <b>' + nfix(st.vb, 3) + ' m/s</b><br>累计摩擦生热 <b>' + nfix(st.Qsum, 3) + ' J</b>，碰撞损失 <b>' + nfix(st.Ec, 3) + ' J</b>';
+}
+/* 组合轨道的画面：所有阶段按顺序画在同一张图上；已通过的阶段停在结束状态，未到的阶段保持初始状态 */
+function renderChain(ctx, W, H, sim, st, o) {
+  const vw = o.view || {}, small = W < 480, bb = sim.bbox, stages = sim.stages, cur = stages[st.stage], bs = small ? 20 : 28, R = small ? 7 : 10, hB = small ? 9 : 12;
+  const padX = small ? 30 : 60, padT = H * 0.36, padB = H * 0.22, prog = (sg, x) => sg.sgn * (x - sg.x0loc), curP = prog(cur, st.loc.xb);
+  const s = (vw.zoom || 1) * Math.min((W - 2 * padX) / Math.max(bb.x1 - bb.x0, 1e-6), (H - padT - padB) / Math.max(bb.y1 - bb.y0, 1e-6));
+  const mx = vw.follow ? cur.O[0] + curP * cur.ux[0] : (bb.x0 + bb.x1) / 2, my = vw.follow ? cur.O[1] + curP * cur.ux[1] : (bb.y0 + bb.y1) / 2, cx = W / 2 + (vw.x || 0), cy = padT + (H - padT - padB) / 2 + (vw.y || 0);
+  // 阶段 sg 上：前进量 p（米）、离开接触面的高度 h（像素）、沿前进方向的偏移 dp（像素）→ 屏幕坐标
+  const pt = (sg, p, h, dp) => { const c = sg.ux[0], n = sg.ux[1]; h = h || 0; dp = dp || 0; return [cx + (sg.O[0] + p * c - mx) * s + dp * c - h * n, cy - (sg.O[1] + p * n - my) * s - dp * n - h * c]; };
+  const path = pts => { ctx.beginPath(); pts.forEach((q, i) => { if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }); };
+  const line = (a, b, col, w, dash) => { ctx.strokeStyle = col; ctx.lineWidth = w || 1; ctx.setLineDash(dash || []); path([a, b]); ctx.stroke(); ctx.setLineDash([]); };
+  const paint = (f, e, w) => { ctx.closePath(); if (f) { ctx.fillStyle = f; ctx.fill(); } if (e) { ctx.strokeStyle = e; ctx.lineWidth = w || 1.5; ctx.stroke(); } };
+  const quad = (sg, p0, p1, h0, h1, d0, d1) => path([pt(sg, p0, h0, d0), pt(sg, p1, h0, d1), pt(sg, p1, h1, d1), pt(sg, p0, h1, d0)]);
+  const block = (sg, p, part, alpha) => {
+    ctx.globalAlpha = alpha == null ? 1 : alpha; quad(sg, p, p, 0, bs, part.off * bs, (part.off + 1) * bs); paint(part.col, part.edge);
+    const q = pt(sg, p, bs / 2, (part.off + 0.5) * bs); ctx.font = 'italic 600 12px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(part.lab, q[0], q[1]); ctx.globalAlpha = 1;
+  };
+  ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(70,90,130,.07)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = 0.5; x < W; x += 20) { ctx.moveTo(x, 0); ctx.lineTo(x, H); } for (let y = 0.5; y < H; y += 20) { ctx.moveTo(0, y); ctx.lineTo(W, y); } ctx.stroke();
+  stages.forEach(sg => {
+    const k = sg.k, T = sg.type, len = sg.len, act = k === st.stage, ls = act ? st.loc : !sg.reached ? null : k < st.stage ? sg.loc1 : sg.loc0, gh = T === 'board' ? -hB : 0, low = T === 'belt' ? -2 * R : gh - 7;
+    line(pt(sg, 0, low - 22), pt(sg, 0, bs + 40), '#cfc6b2', 1, [4, 4]);   // 阶段分界线
+    if (T === 'belt') {
+      quad(sg, 0, len, -2 * R, 0); paint('#e9ecf2', '#7d869b', 2.5);
+      const stp = niceStep(Math.max(len, 1e-6), 10), o0 = (((ls ? ls.xc : 0) % stp) + stp) % stp;
+      for (let x = o0, n = 0; x <= len + 1e-9 && n < 200; x += stp, n++) line(pt(sg, prog(sg, x), 0), pt(sg, prog(sg, x), -5), '#7d869b', 1.5);
+      for (const e of [0, 1]) { const c = pt(sg, e ? len : 0, -R, e ? -R : R); ctx.beginPath(); ctx.arc(c[0], c[1], Math.max(R - 3, 2), 0, 6.3); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#4b556b'; ctx.lineWidth = 1.5; ctx.stroke(); }
+    } else {
+      quad(sg, 0, len, gh - 7, gh); paint('#ebe4d4'); line(pt(sg, 0, gh), pt(sg, len, gh), '#4b556b', 2);
+      if (T === 'board') {   // 木板嵌在凹槽里，板面与前后轨道齐平
+        line(pt(sg, 0, gh), pt(sg, 0, 0), '#4b556b', 2); line(pt(sg, len, gh), pt(sg, len, 0), '#4b556b', 2);
+        const xl = ls ? ls.xc : 0, q = pt(sg, xl + sg.v.L / 2, -hB / 2); quad(sg, xl, xl + sg.v.L, -hB, 0); paint('#dfb97f', '#8a5a22'); sText(ctx, 'M', q[0], q[1], '#5b3a12', 'italic 600 11px ' + FONT);
+      }
+      if (T === 'field') {
+        const top = bs + 36, a = pt(sg, 0, top + 9), b = pt(sg, len, top + 9), e0 = pt(sg, len * 0.14, top - 8), e1 = pt(sg, len * 0.86, top - 8), mq = pt(sg, len / 2, top - 18);
+        quad(sg, 0, len, 0, top); paint('rgba(112,72,232,.07)'); line(pt(sg, 0, 0), pt(sg, 0, top), '#7048e8', 3); line(pt(sg, len, 0), pt(sg, len, top), '#7048e8', 3);
+        sText(ctx, '+', a[0], a[1], '#7048e8', '700 14px ' + FONT); sText(ctx, '−', b[0], b[1], '#7048e8', '700 14px ' + FONT);
+        ctx.globalAlpha = 0.5; sArrow(ctx, e0[0], e0[1], e1[0], e1[1], '#7048e8', 1.2); ctx.globalAlpha = 1; sText(ctx, 'E', mq[0], mq[1], '#7048e8', 'italic 600 11px ' + FONT);
+      }
+    }
+    if (ls && (T === 'belt' || T === 'board') && ls.rMax - ls.rMin > 1e-6) {   // 痕迹
+      let a = ls.rMin + ls.xc, z = ls.rMax + ls.xc; if (T === 'belt') { a = clamp(a, 0, len); z = clamp(z, 0, len); }
+      if (z - a > 1e-9) line(pt(sg, prog(sg, a), 1), pt(sg, prog(sg, z), 1), 'rgba(15,15,20,.9)', 4.5);
+    }
+    if (T === 'hit') {
+      if (!sg.ok || k >= st.stage) block(sg, ls ? ls.xc : sg.v.gap, sg.bPart);   // 碰前：B 在自己的位置
+      else {   // 碰后不再跟踪的那个物体：按碰后速度滑走并淡出（静止的留在原地）
+        const c = sg.coll, dt = st.t - (sg.tOff + sg.dur), left = sg.track === 'B' ? { v: c.v1, parts: sg.body } : sg.track === 'A' ? { v: c.v2, parts: [sg.bPart] } : null;
+        if (left) { const al = Math.abs(left.v) < 1e-9 ? 0.45 : clamp(0.6 * (1 - dt / 1.5), 0, 0.6); if (al > 0.02) left.parts.forEach(pp => block(sg, c.x + left.v * dt, pp, al)); }
+      }
+    }
+    const lq = pt(sg, len / 2, low - 13);
+    sText(ctx, circ(k) + (len * s > 64 ? ' ' + sg.name : ''), lq[0], lq[1], act ? '#a61e1e' : '#566078', (act ? '700 ' : '600 ') + '11px ' + FONT);
+    if (sg.reached && k <= st.stage) { const q = pt(sg, 0, bs + 50); sText(ctx, 'v=' + nfix(sg.vin, 2), q[0], q[1], '#566078', '10px ' + FONT); }   // 入口速度：随进度逐段显示
+  });
+  if (cur.ok && st.t >= sim.tEnd - 1e-9) { const q = pt(cur, cur.len, bs + 50); sText(ctx, 'v=' + nfix(cur.vout, 2), q[0], q[1], '#566078', '10px ' + FONT); }
+  // 红旗：地面旗按全程路程定位，可跨阶段；载体旗只在本阶段的传送带 / 木板上显示
+  const cnt = { ground: 0, carrier: 0 };
+  (o.flags || []).forEach(f => {
+    const n = ++cnt[f.anchor], g = f.anchor === 'ground'; if (f.t > st.t + 1e-9) return;
+    const fs = peekState(sim, f.t); if (!g && (fs.stage !== st.stage || (cur.type !== 'belt' && cur.type !== 'board'))) return;
+    const G = g ? fs.xb : fs.xr + st.xc; if (!g && cur.type === 'belt' && (G < cur.S0 - 1e-9 || G > cur.S0 + cur.len + 1e-9)) return;
+    let sg = stages[0]; for (const x of stages) if (G >= x.S0 - 1e-9) sg = x;
+    const p = G - sg.S0, hh = g ? bs + 44 : bs + 20, d = g ? 1 : -1, b = pt(sg, p, hh), q = pt(sg, p, hh - 6, d * 20);
+    line(pt(sg, p, 0), b, g ? '#6b7280' : '#4a3520', 2); path([b, pt(sg, p, hh - 6, d * 15), pt(sg, p, hh - 12)]); paint(COL.flag);
+    sText(ctx, (g ? '地' : '载') + n, q[0], q[1], '#a61e1e', '600 11px ' + FONT, g ? 'left' : 'right');
+  });
+  cur.body.forEach(pp => block(cur, curP, pp));   // 被跟踪的物体
+  const offs = cur.body.map(pp => pp.off), fr = (Math.max.apply(null, offs) + 1) * bs, bk = Math.min.apply(null, offs) * bs, mid = (fr + bk) / 2;
+  if (o.showVec !== false) {
+    const kv = (small ? 40 : 60) / sim.vmaxAll, va = v => Math.sign(v) * Math.max(14, Math.abs(v) * kv);
+    const arr = (sg, p, h, d0, v, col, lab) => { const d = Math.sign(v), a = pt(sg, p, h, d0), b = pt(sg, p, h, d0 + va(v)), t = pt(sg, p, h, d0 + va(v) + d * 5); sArrow(ctx, a[0], a[1], b[0], b[1], col, 2); sText(ctx, lab + nfix(v, 2), t[0], t[1], col, '11px ' + FONT, d * sg.ux[0] > 0 ? 'left' : 'right'); };
+    if (Math.abs(st.vb) > 1e-6) arr(cur, curP, bs * 0.62, st.vb > 0 ? fr : bk, st.vb, '#c2410c', 'v=');
+    if (Math.abs(st.vc) > 1e-6) {
+      if (cur.type === 'belt') arr(cur, cur.len / 2, -R, -va(st.vc) / 2, st.vc, COL.carrier, 'v带=');
+      else if (cur.type === 'board') arr(cur, st.loc.xc + (st.vc > 0 ? cur.v.L : 0), -hB / 2, 0, st.vc, COL.carrier, 'v板=');
+      else if (cur.type === 'hit') arr(cur, st.loc.xc, bs * 0.38, (cur.bPart.off + (st.vc > 0 ? 1 : 0)) * bs, st.vc, COL.carrier, 'vB=');
+    }
+  }
+  if (o.forces) {
+    const Pc = cur.P, G = Pc.m * Pc.g, kf = (small ? 38 : 54) / Math.max(G, Math.abs(st.fb), Math.abs(st.Fb), Math.abs(Pc.m * st.ab), 1e-9), c0 = pt(cur, curP, bs / 2, mid), fwd = [cur.ux[0], -cur.ux[1]], nrm = [-cur.ux[1], -cur.ux[0]];
+    const vec = (a, d, L, col, lab, dash) => { if (Math.abs(L) < 3) return; const e = [a[0] + d[0] * L, a[1] + d[1] * L], sg2 = Math.sign(L); sArrow(ctx, a[0], a[1], e[0], e[1], col, 2.2, dash); sText(ctx, lab, e[0] + d[0] * sg2 * 11, e[1] + d[1] * sg2 * 11, col, '600 11px ' + FONT); };
+    vec(c0, [0, 1], G * kf, '#2f3b52', 'G'); vec(c0, nrm, G * Pc.cos * kf, '#0b7285', 'N'); vec(pt(cur, curP, 3, mid), fwd, st.fb * kf, '#9c36b5', 'f'); vec(c0, fwd, st.Fb * kf, '#d9480f', cur.type === 'field' ? 'F电' : 'F');
+    if (Math.abs(st.ab) > 1e-9) { vec(pt(cur, curP, bs + 10, mid), fwd, Pc.m * st.ab * kf, '#c92a2a', 'F合', true); vec(pt(cur, curP, bs + 24, mid), fwd, Math.sign(st.ab) * clamp(Math.abs(st.ab) * 7, 16, 64), '#1f7a36', 'a'); }
+  }
+  sHUD(ctx, W, H, sim, st, o.mode === '3d' ? '组合轨道暂只提供 2D 视图' : '前进方向 →');
+}
+/* 左侧的阶段编辑器：结构只在增删 / 排序 / 展开时重建，输入过程中只刷新状态与提示（不打断输入） */
 function renderCombo() {
   const cfg = App.cfg, el = $('#comboBox'); $('#paramCard').dataset.model = cfg.model;
-  if (cfg.model !== 'combo') { el.innerHTML = ''; return; }
-  const runs = (App.inp && App.inp.P.runs) || [], list = cfg.stages || (cfg.stages = []);
-  let html = '<p class="note" style="margin:0 0 10px">把不同例题按顺序拼成一道多过程综合题：前一段结束时的速度可以作为后一段的初速度。每个阶段引用一份已有配置，点“打开”进入该配置修改参数，改动会自动反映到拼合结果。</p>';
-  html += list.map((s, k) => {
-    const src = App.store.configs.find(x => x.id === s.cfgId), ok = !!(src && src.model !== 'combo'), r = runs[k];
-    return '<div class="stg' + (ok ? '' : ' bad') + '" data-k="' + k + '"><b class="ph-n">' + (k + 1) + '</b><div style="min-width:0"><div class="stg-name">' + esc(ok ? src.name : '（配置已删除）') + (ok ? '<span class="badge">' + MODELS[src.model].short + '</span>' : '') + '</div>' +
-      '<div class="stg-io">' + (r ? mathText((r.vIn != null ? '入口 v₀ = ' + fmt(r.vIn) + ' m/s，' : '') + '出口 v = ' + fmt(r.sim.summary.vb) + ' m/s') : (ok ? '尚未算到这一阶段' : '')) + '</div></div>' +
-      (k ? '<select data-link="' + k + '" aria-label="与上一阶段的衔接方式">' + Object.keys(LINKS).map(key => '<option value="' + key + '"' + (s.link === key ? ' selected' : '') + '>' + LINKS[key] + '</option>').join('') + '</select>' : '') +
-      '<div class="stg-act"><button class="btn mini" data-act="up"' + (k ? '' : ' disabled') + '>上移</button><button class="btn mini" data-act="down"' + (k < list.length - 1 ? '' : ' disabled') + '>下移</button>' +
-      (ok ? '<button class="btn mini" data-act="open">打开</button>' : '') + '<button class="btn mini" data-act="del">移除</button></div></div>';
-  }).join('');
-  html += '<label class="fld"><span>添加阶段（任选已有配置或内置例题）</span><select id="stgAdd"><optgroup label="已有配置">' +
-    App.store.configs.filter(x => x.model !== 'combo').map(x => '<option value="c:' + x.id + '">' + esc(x.name) + '（' + MODELS[x.model].short + '）</option>').join('') + '</optgroup>' +
-    Object.keys(MODELS).filter(id => MODELS[id].presets.length).map(id => '<optgroup label="内置例题 · ' + MODELS[id].short + '">' + MODELS[id].presets.map((p, i) => '<option value="p:' + id + ':' + i + '">' + esc(p.name) + '</option>').join('') + '</optgroup>').join('') +
-    '</select></label><div class="row"><button class="btn pri" data-act="add">＋ 添加到末尾</button></div>';
-  el.innerHTML = html;
+  if (cfg.model !== 'combo') { if (el.dataset.sig) { el.innerHTML = ''; el.dataset.sig = ''; } return; }
+  const list = cfg.stages || (cfg.stages = []), sig = [cfg.id, App.stageSel, App.store.configs.length].concat(list.map(s => s.id + s.type)).join('|');
+  if (el.dataset.sig !== sig) {
+    el.dataset.sig = sig;
+    const mine = App.store.configs.filter(x => x.model === 'belt' || x.model === 'board' || x.model === 'duo');
+    el.innerHTML = '<p class="note" style="margin:0 0 10px">把例题当作“阶段”首尾相接成一条轨道：<b>同一个物体</b>依次通过，上一阶段出口的速度、质量自动成为下一阶段的入口条件，全部画在同一张图上。速度以前进方向为正。</p>' +
+      list.map((s, k) => {
+        const T = STAGE_TYPES[s.type], open = s.id === App.stageSel;
+        return '<div class="stg' + (open ? ' sel' : '') + '" data-k="' + k + '"><b class="ph-n">' + (k + 1) + '</b><div style="min-width:0"><div class="stg-name">' + T.name + '<span class="stg-st"></span></div><div class="stg-io"></div></div>' +
+          '<div class="stg-act"><button class="btn mini' + (open ? '' : ' pri') + '" data-do="edit">' + (open ? '收起' : '参数') + '</button><button class="btn mini" data-do="up"' + (k ? '' : ' disabled') + '>上移</button><button class="btn mini" data-do="down"' + (k < list.length - 1 ? '' : ' disabled') + '>下移</button><button class="btn mini" data-do="del">移除</button></div>' +
+          (open ? '<div class="stg-form">' + T.params.map(p => '<div class="prow"><label><i class="sym">' + p.sym + '</i>' + p.name + '</label>' +
+            (p.opts ? '<select data-sk="' + p.key + '" aria-label="' + p.name + '">' + p.opts.map(x => '<option value="' + x[0] + '"' + (s.vals[p.key] === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') + '</select>'
+              : '<div class="pin"><input type="text" data-sk="' + p.key + '" aria-label="' + p.name + '" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(s.vals[p.key] == null ? p.def : s.vals[p.key]) + '"><span class="unit">' + (p.unit || '') + '</span></div>') +
+            '<div class="phint" data-sh="' + p.key + '"></div></div>').join('') + '</div>' : '') + '</div>';
+      }).join('') +
+      '<label class="fld"><span>添加阶段</span><select id="stgAdd"><optgroup label="基本阶段">' + Object.keys(STAGE_TYPES).map(t => '<option value="t:' + t + '">' + STAGE_TYPES[t].name + '</option>').join('') + '</optgroup>' +
+      ['belt', 'board', 'duo'].map(id => '<optgroup label="导入内置例题 · ' + MODELS[id].short + '">' + MODELS[id].presets.map((p, i) => '<option value="p:' + id + ':' + i + '">' + esc(p.name) + '</option>').join('') + '</optgroup>').join('') +
+      (mine.length ? '<optgroup label="导入我的配置">' + mine.map(x => '<option value="c:' + x.id + '">' + esc(x.name) + '</option>').join('') + '</optgroup>' : '') +
+      '<optgroup label="整条示例组合（替换全部阶段）">' + CHAIN_DEMOS.map((d, i) => '<option value="d:' + i + '">' + d.name + '</option>').join('') + '</optgroup></select></label>' +
+      '<div class="row"><button class="btn pri" data-do="add">＋ 添加 / 载入</button></div>';
+  }
+  const runs = (App.inp && App.inp.P.runs) || [];
+  list.forEach((s, k) => {
+    const row = el.querySelector('.stg[data-k="' + k + '"]'), r = runs[k]; if (!row) return;
+    const b = !r ? ['', ''] : r.bad ? ['bad', '参数有误'] : !r.sub ? ['', '未到达'] : r.ok ? ['ok', '通过'] : ['warn', '到此结束'];
+    row.querySelector('.stg-st').innerHTML = b[1] ? '<span class="badge ' + b[0] + '">' + b[1] + '</span>' : '';
+    row.querySelector('.stg-io').innerHTML = r && r.sub ? mathText('v ' + fmt(r.vin) + ' → ' + (r.ok ? fmt(r.vout) + ' m/s' + (r.mout !== r.min ? '，m ' + fmt(r.min) + ' → ' + fmt(r.mout) + ' kg' : '') + '，用时 ' + fmt(r.dur) + ' s' : '✗ ' + r.why)) : '';
+    row.classList.toggle('bad', !!(r && r.bad));
+    STAGE_TYPES[s.type].params.forEach(p => { const h = row.querySelector('[data-sh="' + p.key + '"]'); if (!h) return; const er = r && r.er[p.key]; h.textContent = er || p.hint || ''; h.parentNode.classList.toggle('err', !!er); });
+  });
+}
+function bindChain() {
+  const box = $('#comboBox');
+  $('#btnCombo').addEventListener('click', () => {
+    showView('sim');
+    if (App.cfg.model === 'combo') { toast('当前已是拼合配置：在左侧添加、排序、调整阶段即可'); return; }
+    const n = newConfig('combo'); loadDemo(n, 0); addConfig(n);
+    if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) $('#mTabs button[data-m="param"]').click();
+    toast('已新建拼合配置（示例：加速电场 → 碰撞 → 传送带），可在左侧增删、排序、改参数', 'ok');
+  });
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button[data-do]'); if (!b || App.cfg.model !== 'combo') return;
+    const list = App.cfg.stages, row = b.closest('.stg'), k = row ? +row.dataset.k : -1, act = b.dataset.do;
+    if (act === 'edit') { App.stageSel = App.stageSel === list[k].id ? null : list[k].id; renderCombo(); return; }
+    if (act === 'add') {
+      const val = $('#stgAdd').value, a = val.split(':'); let ns = null;
+      if (a[0] === 'd') { loadDemo(App.cfg, +a[1]); renderCfgSel(); renderModelUI(); recompute(); toast('已载入示例组合', 'ok'); return; }
+      if (a[0] === 't') ns = newStage(a[1]);
+      else if (a[0] === 'p') ns = stageFromCfg(newConfig(a[1], MODELS[a[1]].presets[+a[2]]));
+      else { const src = App.store.configs.find(x => x.id === val.slice(2)); ns = src ? stageFromCfg(src) : null; }
+      if (!ns) { toast('这份配置无法作为阶段导入', 'bad'); return; }
+      list.push(ns); App.stageSel = ns.id; if (a[0] !== 't') toast('已导入为阶段：保留装置参数，初速度和质量改由上一阶段传入', 'ok');
+    } else if (act === 'del') list.splice(k, 1);
+    else if (act === 'up' && k > 0) list.splice(k - 1, 0, list.splice(k, 1)[0]);
+    else if (act === 'down' && k >= 0 && k < list.length - 1) list.splice(k + 1, 0, list.splice(k, 1)[0]);
+    recompute();
+  });
+  box.addEventListener('input', e => {
+    const inp = e.target.closest('[data-sk]'), row = inp && inp.closest('.stg'); if (!row || App.cfg.model !== 'combo') return;
+    const s = App.cfg.stages[+row.dataset.k]; if (!s) return; s.vals[inp.dataset.sk] = inp.value;
+    if (inp.tagName === 'SELECT') recompute(); else scheduleRecompute();
+  });
+  box.addEventListener('focusin', e => { if (e.target.tagName === 'INPUT' && e.target.dataset.sk) App.lastInput = e.target; });
 }
 
 /* —— 视图：缩放 / 平移 / 旋转 / 全屏 —— */
@@ -3182,29 +3469,7 @@ function bindV4() {
   const onFsChange = () => { if (!(document.fullscreenElement || document.webkitFullscreenElement) && $('#stageCard').classList.contains('fs')) toggleFS(false); App.dirty = true; };
   document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#stageCard').classList.contains('fs') && !document.querySelector('dialog[open]')) toggleFS(false); });
-  // 例题拼合
-  $('#btnCombo').addEventListener('click', () => {
-    showView('sim');
-    if (App.cfg.model === 'combo') { toast('当前已是拼合配置：在左侧“添加阶段”即可'); return; }
-    const first = App.cfg, n = newConfig('combo'); n.name = '拼合·' + first.name; n.problem.title = n.name; n.stages = [{ cfgId: first.id, link: 'none' }]; addConfig(n);
-    if (window.matchMedia && window.matchMedia('(max-width:820px)').matches) $('#mTabs button[data-m="param"]').click();
-    toast('已新建拼合配置：「' + first.name + '」为阶段 1，请在左侧继续添加阶段', 'ok');
-  });
-  $('#comboBox').addEventListener('click', e => {
-    const b = e.target.closest('button[data-act]'); if (!b || App.cfg.model !== 'combo') return;
-    const list = App.cfg.stages, row = b.closest('.stg'), k = row ? +row.dataset.k : -1, act = b.dataset.act;
-    if (act === 'add') {
-      const v = $('#stgAdd').value; if (!v) { toast('没有可添加的配置'); return; } let id;
-      if (v.charAt(0) === 'c') id = v.slice(2);
-      else { const a = v.split(':'), n = newConfig(a[1], MODELS[a[1]].presets[+a[2]]); App.store.configs.push(n); id = n.id; renderCfgSel(); }
-      list.push({ cfgId: id, link: 'abs' });
-    } else if (act === 'del') list.splice(k, 1);
-    else if (act === 'up' && k > 0) list.splice(k - 1, 0, list.splice(k, 1)[0]);
-    else if (act === 'down' && k >= 0 && k < list.length - 1) list.splice(k + 1, 0, list.splice(k, 1)[0]);
-    else if (act === 'open') { const src = App.store.configs.find(x => x.id === list[k].cfgId); if (src) { setCurrent(src); toast('已打开「' + src.name + '」：改完后在顶部切回拼合配置即可看到新结果'); } return; }
-    recompute();
-  });
-  $('#comboBox').addEventListener('change', e => { const s = e.target.closest('select[data-link]'); if (!s || App.cfg.model !== 'combo') return; App.cfg.stages[+s.dataset.link].link = s.value; recompute(); });
+  bindChain();   // 例题拼合（组合轨道）的阶段编辑器
   syncViewUI();
 }
 /* 扫描 / 反求的参数下拉：当前模型没有默认项（μ）时自动选中第一项 */
