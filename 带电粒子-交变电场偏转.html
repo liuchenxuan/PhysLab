@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>带电粒子 · 交变电场偏转演示</title>
+<style>
+:root{
+  --bg:#f3efe6; --paper:#fffdf8; --ink:#1b2333; --ink2:#566078; --ink3:#8a93a6;
+  --line:#ddd5c5; --line2:#ece6da; --navy:#18202f; --flag:#e03131;
+  --block:#e8590c; --carrier:#1c7ed6; --rel:#2b8a3e; --violet:#7048e8;
+  --ok:#2b8a3e; --warn:#d9780a; --bad:#c92a2a;
+  --r:12px; --shadow:0 1px 0 rgba(0,0,0,.03),0 10px 26px -16px rgba(50,35,10,.28);
+  --sans:"HarmonyOS Sans SC","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  --serif:"Songti SC","Noto Serif SC","STSong","SimSun",serif;
+  --math:"Cambria Math","STIX Two Math","Times New Roman",serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 var(--sans);
+  background-image:linear-gradient(rgba(90,70,30,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(90,70,30,.045) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+h1,h2,h3,h4,h5,p{margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
+
+/* 顶栏 */
+.top{background:var(--navy);color:#f3ecdc;display:flex;align-items:center;gap:16px;padding:11px 18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand b{display:block;font:700 17px/1.15 var(--serif);letter-spacing:.05em}
+.brand span{display:block;font-size:11px;letter-spacing:.3em;color:#b9b19d;margin-top:3px}
+.top .sp{flex:1}
+.pill{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:#e9e2d0;border-radius:99px;padding:5px 12px;font-size:12px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pill i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#51cf66;margin-right:6px}
+
+/* 配置栏 */
+.cfgbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 18px;background:rgba(255,253,248,.88);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.cfgbar label{font-size:12px;color:var(--ink2)}
+.cfgbar select{height:34px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 9px;min-width:220px;max-width:100%}
+.cfgbar .sp{flex:1}
+.wrap{padding:14px 18px 44px;max-width:1720px;margin:0 auto}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr) 360px;gap:14px;align-items:start}
+.center{display:grid;gap:14px;min-width:0}
+.side{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}
+
+/* 通用 */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;min-width:0}
+.card-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+.card-h h3{font:700 15px/1.2 var(--serif);letter-spacing:.04em}
+.card-h h3::before{content:"";display:inline-block;width:0;height:0;border-left:9px solid var(--flag);border-top:5px solid transparent;border-bottom:5px solid transparent;margin-right:7px;vertical-align:1px}
+.card-h .sp{flex:1}
+.muted{color:var(--ink3);font-size:12px}
+.note{font-size:12px;color:var(--ink2);line-height:1.65;margin-top:8px}
+.btn{height:34px;padding:0 12px;border:1px solid var(--line);background:#fff;border-radius:8px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:hover{border-color:#b9ae97}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.pri:hover{background:#263249}
+.btn.mini{height:27px;padding:0 9px;font-size:12px;border-radius:6px}
+.btn.red{background:var(--flag);border-color:var(--flag);color:#fff}
+.badge{display:inline-block;font-size:11px;line-height:1;padding:3px 6px;border-radius:5px;background:#eee8da;color:var(--ink2);margin-left:5px;vertical-align:1px}
+.badge.ok{background:#e3f6e6;color:var(--ok)}.badge.warn{background:#fff0d9;color:var(--warn)}.badge.bad{background:#ffe3e1;color:var(--bad)}.badge.info{background:#e4eefb;color:#1c5fb0}
+.banner{border-radius:8px;padding:8px 10px;font-size:12px;margin:8px 0;background:#fff1f0;border:1px solid #f3b4b0;color:var(--bad)}
+.chk{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.chk input{accent-color:var(--flag);width:15px;height:15px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.seg button{flex:1;border:0;background:none;padding:8px 5px;color:var(--ink2)}
+.seg button.on{background:var(--navy);color:#fff}
+.tgls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+.tgl{position:relative;display:inline-flex;cursor:pointer}
+.tgl input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.tgl span{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 10px 4px 23px;font-size:12px;line-height:1.5;color:var(--ink2);position:relative;white-space:nowrap}
+.tgl span::before{content:"";position:absolute;left:8px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:#cfc7b6}
+.tgl input:checked+span{border-color:var(--navy);color:var(--ink);background:#f1f4fa}
+.tgl input:checked+span::before{background:#2f9e44}
+.tgl input:focus-visible+span{outline:2px solid var(--flag);outline-offset:2px}
+
+/* 参数 */
+.pg{border:0;border-top:1px dashed var(--line);margin:12px 0 0;padding:8px 0 0}
+.pg legend{font:700 12px var(--sans);color:var(--ink2);padding:0 8px 0 0;letter-spacing:.1em}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 124px;gap:3px 8px;align-items:center;padding:4px 0}
+.prow label{font-size:13px;color:var(--ink);min-width:0}
+.sym{font:italic 14px var(--math);color:#a13a0a;margin-right:5px;display:inline-block;min-width:24px}
+.pin{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.pin input{border:0;outline:0;width:100%;min-width:0;padding:6px 4px 6px 8px;font:13.5px var(--mono);background:none}
+.pin:focus-within{border-color:var(--navy);box-shadow:0 0 0 2px rgba(24,32,47,.12)}
+.pin .unit{font-size:10.5px;color:var(--ink3);padding-right:7px;white-space:nowrap}
+.phint{grid-column:1/-1;font-size:11px;color:var(--ink3);line-height:1.4;min-height:0}
+.prow.err .pin{border-color:var(--bad)}.prow.err .phint{color:var(--bad)}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink2);margin:10px 0}
+.slider{width:100%;accent-color:var(--flag);margin:1px 0 0}
+.group-note{font-size:11.5px;color:var(--ink3);line-height:1.55;margin:6px 0 0}
+
+/* 画面 */
+.stage{padding:0;overflow:hidden}
+.stage-bar{padding:10px 12px 8px;margin:0}
+.stage .canvasWrap{border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);background:#fffdf8}
+.canvasWrap{position:relative}
+canvas{display:block;width:100%}
+#scene{height:clamp(310px,38vw,450px);touch-action:pan-y}
+.transport{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:6px 12px;align-items:center;padding:10px 12px 2px}
+.tp-btns{display:flex;gap:5px;align-items:center}
+.ib{width:34px;height:34px;border:1px solid var(--line);background:#fff;border-radius:8px;display:grid;place-items:center;color:var(--ink2);padding:0}
+.ib:hover{border-color:#b9ae97;color:var(--ink)}
+.tp-line{min-width:0}
+.timeline{margin:3px 0 0}
+.timeline input{width:100%;accent-color:var(--flag);margin:0;display:block}
+.tp-time{font:600 12px var(--mono);color:var(--ink2);white-space:nowrap;text-align:right;min-width:118px}
+.transport select{height:34px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 4px}
+.fieldstrip{display:flex;gap:2px;margin:2px 12px 10px;height:18px}
+.fieldstrip .fs{flex:1 1 0;min-width:3px;border-radius:3px;background:#ebe4d4;color:#fff;font:600 9px/18px var(--sans);text-align:center;overflow:hidden;cursor:pointer}
+.fieldstrip .fs.pos{background:#e8590c}
+.fieldstrip .fs.neg{background:#1c7ed6}
+.fieldstrip .fs.free{background:#b9b1a0}
+.fieldstrip .fs.on{outline:2px solid var(--navy);outline-offset:1px}
+
+/* 图表 */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chart{margin:0;border:1px solid var(--line2);border-radius:9px;overflow:hidden;background:#fffdf8}
+.chart canvas{height:196px}
+
+/* 右侧 */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:-2px 0 12px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:8px 9px;color:var(--ink2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-size:13px}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--flag);font-weight:600}
+.pane{display:none}.pane.on{display:block}
+.ph{border:1px solid var(--line2);border-radius:9px;padding:9px 10px;margin-bottom:8px;background:#fff;cursor:pointer}
+.ph.on{border-color:var(--flag);box-shadow:inset 3px 0 0 var(--flag)}
+.ph header{display:flex;align-items:center;gap:8px;font-size:12px}
+.ph header span{color:var(--ink3);font-family:var(--mono);font-size:11px;flex:1}
+.ph-n{flex:none;width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font:700 11px/20px var(--sans);text-align:center}
+.ph.on .ph-n{background:var(--flag)}
+.ph h5{font-size:13px;margin:4px 0}
+.ph ul{margin:0;padding-left:15px;font-size:12px;color:var(--ink2);line-height:1.7}
+.ph footer{font-size:12px;color:#a61e1e;margin-top:4px;line-height:1.6}
+.kv{width:100%;border-collapse:collapse;font-size:12.5px}
+.kv td{padding:5px 3px;border-bottom:1px dashed var(--line2);vertical-align:top}
+.kv td:last-child{text-align:right;font-family:var(--mono);color:#0d3b66;white-space:nowrap}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.tile{border:1px solid var(--line2);border-radius:10px;background:#fff;padding:7px 10px;min-width:0}
+.tile span{display:block;font-size:11.5px;color:var(--ink2)}
+.tile b{display:block;font:600 15px/2 var(--mono);color:#0d3b66;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qbox{border:1px dashed #e9a7a2;background:#fff7f5;border-radius:9px;padding:9px 10px;font-size:12.5px;line-height:1.75;margin-top:9px}
+.sol{border:1px solid var(--line2);border-radius:10px;background:#fff;padding:0;margin-bottom:10px;overflow:hidden}
+.sol h5{font-size:13px;margin:0;padding:8px 12px;background:#faf6ec;border-bottom:1px solid var(--line2);color:var(--ink);display:flex;gap:8px;align-items:center;line-height:1.7}
+.sol-n{flex:none;width:20px;height:20px;border-radius:50%;background:var(--flag);color:#fff;font:700 11px/20px var(--sans);text-align:center}
+.eqs{display:grid;grid-template-columns:88px minmax(0,1fr)}
+.eq-t{font-size:11.5px;color:#7a5a12;background:#fffaf0;padding:10px 8px 0;border-bottom:1px dashed var(--line2);white-space:nowrap;text-align:right;letter-spacing:.03em}
+.eq-b{padding:6px 11px;border-bottom:1px dashed var(--line2);font-size:13px;line-height:2.05;word-break:break-word;min-width:0}
+.eqs>:nth-last-child(-n+2){border-bottom:0}
+.math{font-family:var(--math);font-size:1.06em}
+.math i{font-style:italic}
+sub,sup{line-height:0}
+.note ul{margin:4px 0 0;padding-left:17px}
+.note li{margin:2px 0}
+.toasts{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:grid;gap:6px;z-index:99;pointer-events:none;width:max-content;max-width:92vw}
+.toast{background:var(--navy);color:#fff;border-radius:9px;padding:8px 14px;font-size:13px;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);transition:opacity .35s,transform .35s}
+.toast.bad{background:#a61e1e}.toast.ok{background:#1f7a36}
+.toast.out{opacity:0;transform:translateY(6px)}
+
+@media (max-width:1240px){
+  .grid{grid-template-columns:280px minmax(0,1fr)}
+  .side.right{grid-column:1/-1;position:static;max-height:none}
+}
+@media (max-width:860px){
+  .wrap{padding:10px 10px 40px}
+  .top{padding:9px 10px}.cfgbar{padding:8px 10px}
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .center{order:-1}
+  .side{position:static;max-height:none}
+  .charts{grid-template-columns:minmax(0,1fr)}
+  #scene{height:300px}
+  .transport{grid-template-columns:auto minmax(0,1fr) auto;row-gap:6px}
+  .tp-line{grid-column:1/-1;order:3}
+  .tp-time{min-width:0}
+  .cfgbar select{min-width:160px}
+  .btn{height:38px}.btn.mini{height:30px}
+  input,select{font-size:16px!important}
+  .prow{grid-template-columns:minmax(0,1fr) 116px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 34 34" width="34" height="34" aria-hidden="true">
+      <rect x="2" y="5" width="30" height="4" rx="2" fill="#f1e9d8"/>
+      <rect x="2" y="25" width="30" height="4" rx="2" fill="#f1e9d8"/>
+      <path d="M9 9v16M25 9v16" stroke="#b9b19d" stroke-width="1.2" stroke-dasharray="3 3"/>
+      <circle cx="17" cy="17" r="4" fill="#ff8a3d"/>
+      <path d="M17 12V5M14.5 7.5L17 5l2.5 2.5" stroke="#ff4d4d" stroke-width="1.4" fill="none"/>
+    </svg>
+    <div><b>带电粒子 · 交变电场</b><span>偏转演示实验台</span></div>
+  </div>
+  <span class="sp"></span>
+  <span class="pill" id="pill"><i></i>电子 · q/m = −1.76×10¹¹ C/kg</span>
+</header>
+
+<div class="cfgbar">
+  <label for="preset">预设</label>
+  <select id="preset" aria-label="选择预设"></select>
+  <button class="btn" id="btnReset">重置</button>
+  <button class="btn" id="btnPNG">保存画面</button>
+  <span class="sp"></span>
+  <span class="muted">单位：mm · ns · V · MHz · 10⁷ m/s</span>
+</div>
+
+<main class="wrap">
+  <div class="grid" id="grid">
+    <aside class="card side">
+      <div class="card-h"><h3>参数设置</h3><span class="sp"></span><span class="muted">理想模型</span></div>
+      <div id="errBox" class="banner" hidden></div>
+
+      <fieldset class="pg"><legend>粒子</legend>
+        <div class="prow" data-key="qm">
+          <label for="p_qm"><i class="sym">q/m</i>比荷</label>
+          <div class="pin"><input id="p_qm" type="text" value="-1.76e11" autocomplete="off" spellcheck="false"><span class="unit">C/kg</span></div>
+          <div class="phint">电子 −1.76e11；正电子 +1.76e11；质子 +9.58e7；负值 = 负电荷</div>
+        </div>
+      </fieldset>
+
+      <fieldset class="pg"><legend>电场</legend>
+        <div class="prow" data-key="U0">
+          <label for="p_U0"><i class="sym">U₀</i>电压幅值</label>
+          <div class="pin"><input id="p_U0" type="text" value="30" autocomplete="off" spellcheck="false"><span class="unit">V</span></div>
+          <div class="phint">极板间电压的幅值</div>
+        </div>
+        <div class="prow" data-key="d">
+          <label for="p_d"><i class="sym">d</i>板间距</label>
+          <div class="pin"><input id="p_d" type="text" value="10" autocomplete="off" spellcheck="false"><span class="unit">mm</span></div>
+          <div class="phint">E₀ = U₀ / d</div>
+        </div>
+        <div class="prow" data-key="L">
+          <label for="p_L"><i class="sym">L</i>板长</label>
+          <div class="pin"><input id="p_L" type="text" value="50" autocomplete="off" spellcheck="false"><span class="unit">mm</span></div>
+          <div class="phint">场区只存在于 0 ≤ x ≤ L</div>
+        </div>
+        <div class="fld"><span>波形</span>
+          <div class="seg" id="waveSeg" role="group" aria-label="电场波形">
+            <button data-wave="square" class="on">方波</button>
+            <button data-wave="sine">正弦</button>
+          </div>
+        </div>
+        <div class="prow" data-key="f">
+          <label for="p_f"><i class="sym">f</i>频率</label>
+          <div class="pin"><input id="p_f" type="text" value="200" autocomplete="off" spellcheck="false"><span class="unit">MHz</span></div>
+          <div class="phint">周期 T_f = 1/f</div>
+        </div>
+        <div class="prow" data-key="phi">
+          <label for="p_phi"><i class="sym">φ</i>入射相位</label>
+          <div class="pin"><input id="p_phi" type="text" value="0" autocomplete="off" spellcheck="false"><span class="unit">°</span></div>
+          <div class="phint">进入场区瞬间的电场相位</div>
+        </div>
+        <input class="slider" id="phiRange" type="range" min="0" max="360" step="1" value="0" aria-label="入射相位">
+      </fieldset>
+
+      <fieldset class="pg"><legend>运动与屏幕</legend>
+        <div class="prow" data-key="v0">
+          <label for="p_v0"><i class="sym">v₀</i>入射速度</label>
+          <div class="pin"><input id="p_v0" type="text" value="1.0" autocomplete="off" spellcheck="false"><span class="unit">10⁷ m/s</span></div>
+          <div class="phint">水平方向匀速，穿越时间 T = L/v₀</div>
+        </div>
+        <div class="prow" data-key="screenGap">
+          <label for="p_screenGap"><i class="sym">D</i>屏距</label>
+          <div class="pin"><input id="p_screenGap" type="text" value="30" autocomplete="off" spellcheck="false"><span class="unit">mm</span></div>
+          <div class="phint">出射后自由飞行到荧光屏</div>
+        </div>
+      </fieldset>
+
+      <p class="group-note">
+        <b>符号约定：</b>y 轴向上为正；正电荷受力沿 E，负电荷相反。方波在 sin(ωt+φ)=0 时取 +1；正弦为 E₀sin(ωt+φ)。
+      </p>
+    </aside>
+
+    <div class="center">
+      <div class="card stage">
+        <div class="card-h stage-bar"><h3>偏转轨迹</h3><span class="muted" id="stageSub"></span>
+          <div class="tgls" style="margin-left:auto">
+            <label class="tgl"><input id="chkField" type="checkbox" checked><span>场箭头</span></label>
+            <label class="tgl"><input id="chkVec" type="checkbox" checked><span>速度矢量</span></label>
+            <label class="tgl"><input id="chkFamily" type="checkbox"><span>相位族</span></label>
+          </div>
+        </div>
+        <div class="canvasWrap"><canvas id="scene" aria-label="带电粒子在交变电场中的偏转轨迹"></canvas></div>
+        <div class="transport">
+          <div class="tp-btns">
+            <button class="ib" id="btnReset2" title="回到起点" aria-label="回到起点">⟲</button>
+            <button class="btn pri" id="btnPlay" style="min-width:86px">播放</button>
+            <button class="ib" id="btnStep" title="下一段" aria-label="下一段">⇥</button>
+          </div>
+          <div class="tp-line">
+            <div class="timeline"><input type="range" id="tl" min="0" max="1000" value="0" aria-label="时间轴"></div>
+          </div>
+          <output class="tp-time" id="tNow">t = 0 ns</output>
+          <select id="speed" aria-label="播放速度">
+            <option value="0.25">0.25×</option>
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+          </select>
+        </div>
+        <div class="fieldstrip" id="fieldStrip" aria-label="电场极性随时间变化"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3>实时图表</h3><span class="sp"></span><span class="muted">红线 = 当前时刻</span></div>
+        <div class="charts">
+          <figure class="chart"><canvas id="chartY" aria-label="偏转 y-t"></canvas></figure>
+          <figure class="chart"><canvas id="chartVy" aria-label="纵向速度 vy-t"></canvas></figure>
+          <figure class="chart"><canvas id="chartE" aria-label="电场 E-t"></canvas></figure>
+          <figure class="chart"><canvas id="chartPhase" aria-label="屏幕偏转随入射相位变化"></canvas></figure>
+        </div>
+      </div>
+    </div>
+
+    <aside class="card side right">
+      <div class="tabs" id="tabs" role="tablist">
+        <button data-tab="process" class="on" role="tab">过程</button>
+        <button data-tab="result" role="tab">结果</button>
+        <button data-tab="solve" role="tab">解题</button>
+        <button data-tab="info" role="tab">说明</button>
+      </div>
+      <div class="pane on" id="pane-process"><div id="processList"></div></div>
+      <div class="pane" id="pane-result"><div id="resultBox"></div></div>
+      <div class="pane" id="pane-solve"><div id="solutionBox"></div></div>
+      <div class="pane" id="pane-info">
+        <div class="note" id="infoBox"></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script id="phys">
+'use strict';
+/* =====================================================================
+ * PHYS：纯物理核心（无 DOM）
+ * 带电粒子在平行板间的交变电场中偏转。
+ * 坐标：x 水平向右，y 竖直向上；粒子从 (0,0) 以 v0 沿 +x 进入。
+ * 场区：0 ≤ x ≤ L；出射后自由飞行到 x = L + D 的荧光屏。
+ * ===================================================================== */
+const PHYS = (() => {
+  const EPS = 1e-12;
+
+  /* c + b t + (a/2) t² = 0 的最小正根 */
+  function firstRoot(c, b, a) {
+    const h = a / 2;
+    let roots = [];
+    if (Math.abs(h) < 1e-16) {
+      if (Math.abs(b) > 1e-16) roots.push(-c / b);
+    } else {
+      const D = b * b - 4 * h * c;
+      if (D < 0) return Infinity;
+      const q = -0.5 * (b + (b >= 0 ? 1 : -1) * Math.sqrt(D));
+      roots.push(q / h);
+      if (q !== 0) roots.push(c / q);
+    }
+    let best = Infinity;
+    for (const r of roots) if (r > 1e-12 && r < best) best = r;
+    return best;
+  }
+
+  function bisect(fn, a, b) {
+    let fa = fn(a), fb = fn(b);
+    if (fa === 0) return a;
+    if (fb === 0) return b;
+    for (let i = 0; i < 60; i++) {
+      const m = (a + b) / 2, fm = fn(m);
+      if (fa * fm <= 0) { b = m; fb = fm; } else { a = m; fa = fm; }
+    }
+    return (a + b) / 2;
+  }
+
+  function num(x, d) {
+    if (x == null || !isFinite(x)) return '—';
+    let s = Number(x).toFixed(d == null ? 2 : d);
+    s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return s === '-0' ? '0' : s;
+  }
+  function sci(x, d) {
+    if (x == null || !isFinite(x)) return '—';
+    if (x === 0) return '0';
+    const e = Math.floor(Math.log10(Math.abs(x)));
+    const m = x / Math.pow(10, e);
+    const sup = String(e).replace(/-/g, '⁻').replace(/[0-9]/g, c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+c]);
+    return num(m, d == null ? 2 : d) + '×10' + sup;
+  }
+  const mm = x => num(x * 1e3, 3) + ' mm';
+  const ns = x => num(x * 1e9, 2) + ' ns';
+  const vyTxt = x => num(x / 1e6, 3) + '×10⁶ m/s';
+
+  function Efield(P, t) {
+    const T = P.L / P.v0;
+    if (t > T + 1e-15) return 0;
+    const E0 = P.U0 / P.d;
+    const om = 2 * Math.PI * P.f;
+    const ph = P.phiDeg * Math.PI / 180;
+    const s = Math.sin(om * t + ph);
+    return E0 * (P.wave === 'sine' ? s : (s >= 0 ? 1 : -1));
+  }
+
+  function simulate(P) {
+    const qm = P.qm, U0 = P.U0, d = P.d, L = P.L, v0 = P.v0;
+    const f = P.f, phiDeg = P.phiDeg, D = P.screenGap, wave = P.wave;
+    const E0 = U0 / d, A = qm * E0;
+    const omega = 2 * Math.PI * f;
+    const phi = phiDeg * Math.PI / 180;
+    const T = L / v0, Tgap = D / v0, plate = d / 2;
+
+    let t = 0, x = 0, y = 0, vy = 0;
+    let hit = false, tHit = null, yHit = null, xHit = null;
+    let yExit = null, vyExit = null;
+    const segs = [], phases = [], samples = [];
+
+    const signAt = tt => Math.sin(omega * tt + phi) >= 0 ? 1 : -1;
+    const yOf = tt => (A / (omega * omega)) * (Math.sin(phi) - Math.sin(omega * tt + phi) + omega * tt * Math.cos(phi));
+    const vyOf = tt => (A / omega) * (Math.cos(phi) - Math.cos(omega * tt + phi));
+
+    if (wave === 'square') {
+      const flips = [];
+      const nmax = Math.ceil((omega * T + phi) / Math.PI) + 3;
+      for (let n = -3; n <= nmax; n++) {
+        const tt = (n * Math.PI - phi) / omega;
+        if (tt > 1e-12 && tt < T - 1e-12) flips.push(tt);
+      }
+      flips.sort((a, b) => a - b);
+      const bounds = [0, ...flips, T];
+
+      for (let k = 0; k < bounds.length - 1; k++) {
+        const t0 = bounds[k], t1 = bounds[k + 1];
+        let dt = t1 - t0;
+        const sign = signAt((t0 + t1) / 2);
+        const a = A * sign;
+        let hitT = Infinity, hitLim = null;
+        for (const lim of [plate, -plate]) {
+          const c = lim === plate ? y - plate : y + plate;
+          const r = firstRoot(c, vy, a);
+          if (r < hitT) { hitT = r; hitLim = lim; }
+        }
+        let end = 'flip';
+        if (hitT < dt - 1e-12) { dt = hitT; end = 'hit'; }
+        else if (Math.abs(t1 - T) < 1e-12) end = 'exit';
+
+        const yy0 = y, vv0 = vy;
+        const xx0 = x, xx1 = x + v0 * dt;
+        const yy1 = yy0 + vv0 * dt + 0.5 * a * dt * dt;
+        const vv1 = vv0 + a * dt;
+        segs.push({ k: segs.length, t0, t1: t0 + dt, dt, xx0, xx1, yy0, yy1, vv0, vv1, a, sign, kind: 'field', end });
+        x = xx1; y = yy1; vy = vv1; t = t0 + dt;
+
+        if (end === 'hit') {
+          hit = true; tHit = t; yHit = y; xHit = x;
+          break;
+        }
+      }
+
+      if (!hit) {
+        yExit = y; vyExit = vy;
+        const t0 = T, t1 = T + Tgap;
+        const yy1 = y + vy * Tgap;
+        segs.push({ k: segs.length, t0, t1, dt: Tgap, xx0: L, xx1: L + D, yy0: y, yy1, vv0: vy, vv1: vy, a: 0, sign: 0, kind: 'free', end: 'screen' });
+        x = L + D; y = yy1; t = t1;
+      }
+    } else {
+      /* 正弦场：解析积分 */
+      let tField = T;
+      let hitT = Infinity, hitLim = null;
+      const N = Math.max(600, Math.min(8000, Math.ceil(2 * f * T * 160)));
+      let pt = 0, pTop = yOf(0) - plate, pBot = yOf(0) + plate;
+      for (let i = 1; i <= N; i++) {
+        const tt = T * i / N;
+        const top = yOf(tt) - plate, bot = yOf(tt) + plate;
+        if (pTop === 0 && pt > 1e-12) { if (pt < hitT) { hitT = pt; hitLim = plate; } }
+        if (pBot === 0 && pt > 1e-12) { if (pt < hitT) { hitT = pt; hitLim = -plate; } }
+        if (pTop * top < 0) {
+          const r = bisect(u => yOf(u) - plate, pt, tt);
+          if (r < hitT) { hitT = r; hitLim = plate; }
+        }
+        if (pBot * bot < 0) {
+          const r = bisect(u => yOf(u) + plate, pt, tt);
+          if (r < hitT) { hitT = r; hitLim = -plate; }
+        }
+        pt = tt; pTop = top; pBot = bot;
+      }
+      if (hitT < T - 1e-12) { tField = hitT; hit = true; tHit = hitT; }
+
+      const bounds = [0];
+      const nmax = Math.ceil((omega * tField + phi) / Math.PI) + 2;
+      for (let n = -2; n <= nmax; n++) {
+        const tt = (n * Math.PI - phi) / omega;
+        if (tt > 1e-12 && tt < tField - 1e-12) bounds.push(tt);
+      }
+      bounds.push(tField);
+
+      for (let k = 0; k < bounds.length - 1; k++) {
+        const t0 = bounds[k], t1 = bounds[k + 1];
+        const yy0 = yOf(t0), yy1 = yOf(t1);
+        const vv0 = vyOf(t0), vv1 = vyOf(t1);
+        const mid = (t0 + t1) / 2;
+        const sign = signAt(mid);
+        const a = A * Math.sin(omega * mid + phi);
+        const last = k === bounds.length - 2;
+        segs.push({ k: segs.length, t0, t1, dt: t1 - t0, xx0: v0 * t0, xx1: v0 * t1, yy0, yy1, vv0, vv1, a, sign, kind: 'field', end: last ? (hit ? 'hit' : 'exit') : 'flip' });
+      }
+
+      if (hit) {
+        y = yOf(tField); vy = vyOf(tField); x = v0 * tField; t = tField;
+        yHit = y; xHit = x;
+      } else {
+        yExit = yOf(T); vyExit = vyOf(T); y = yExit; vy = vyExit; x = L; t = T;
+        const yy1 = y + vy * Tgap;
+        segs.push({ k: segs.length, t0: T, t1: T + Tgap, dt: Tgap, xx0: L, xx1: L + D, yy0: y, yy1, vv0: vy, vv1: vy, a: 0, sign: 0, kind: 'free', end: 'screen' });
+        x = L + D; y = yy1; t = T + Tgap;
+      }
+    }
+
+    function stateInSeg(seg, tt) {
+      const time = Math.min(Math.max(tt, seg.t0), seg.t1);
+      let yy, vv, aa;
+      if (wave === 'square') {
+        const dt = time - seg.t0;
+        yy = seg.yy0 + seg.vv0 * dt + 0.5 * seg.a * dt * dt;
+        vv = seg.vv0 + seg.a * dt;
+        aa = seg.a;
+      } else if (seg.kind === 'free') {
+        const dt = time - seg.t0;
+        yy = seg.yy0 + seg.vv0 * dt;
+        vv = seg.vv0;
+        aa = 0;
+      } else {
+        yy = yOf(time); vv = vyOf(time); aa = A * Math.sin(omega * time + phi);
+      }
+      const E = Efield(P, time);
+      return {
+        t: time, i: seg.k, segKind: seg.kind,
+        x: v0 * time, y: yy, vy: vv, vx: v0, ay: aa, E,
+        phase: ((omega * time + phi) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI),
+        hit: seg.end === 'hit' && Math.abs(time - seg.t1) < 1e-12
+      };
+    }
+
+    for (const seg of segs) {
+      for (let k = 0; k <= 30; k++) {
+        samples.push(stateInSeg(seg, seg.t0 + (seg.t1 - seg.t0) * k / 30));
+      }
+    }
+    let maxAbsY = 0;
+    for (const s of samples) maxAbsY = Math.max(maxAbsY, Math.abs(s.y));
+
+    /* 过程卡片 */
+    segs.forEach((seg, idx) => {
+      const field = seg.kind === 'field';
+      const dir = seg.sign > 0 ? '向上' : '向下';
+      const title = field
+        ? (wave === 'square' ? `电场${dir}，粒子${seg.sign * qm > 0 ? '向上' : '向下'}加速` : `电场${dir}（第 ${idx + 1} 段）`)
+        : '离开电场，匀速直线飞行';
+      const lines = [];
+      if (field) {
+        const E = E0 * seg.sign;
+        const aTxt = (seg.a >= 0 ? '+' : '') + sci(seg.a, 2);
+        lines.push(`E ≈ ${E >= 0 ? '+' : ''}${num(E, 0)} V/m，a_y ≈ ${aTxt} m/s²`);
+        lines.push(`v_y：${vyTxt(seg.vv0)} → ${vyTxt(seg.vv1)}`);
+        lines.push(`y：${mm(seg.yy0)} → ${mm(seg.yy1)}`);
+        lines.push(`历时 ${ns(seg.dt)}`);
+      } else {
+        lines.push(`v_y 保持 ${vyTxt(seg.vv0)}，做匀速直线运动`);
+        lines.push(`y：${mm(seg.yy0)} → ${mm(seg.yy1)}`);
+        lines.push(`历时 ${ns(seg.dt)}，到达荧光屏`);
+      }
+      const end = seg.end === 'flip' ? '电场反向'
+        : seg.end === 'hit' ? '打到极板，运动结束'
+        : seg.end === 'exit' ? '离开电场'
+        : '到达荧光屏';
+      phases.push({ title, lines, end, t0: seg.t0, t1: seg.t1, sign: seg.sign, kind: seg.kind });
+    });
+
+    const period = 1 / f, cycles = f * T;
+    const tEnd = hit ? tHit : T + Tgap;
+    const yScreen = hit ? null : yExit + vyExit * Tgap;
+    const angle = hit ? null : Math.atan2(vyExit, v0) * 180 / Math.PI;
+    const tField = hit ? tHit : T;
+
+    const sim = {
+      P, segs, phases, samples, tEnd,
+      summary: {
+        E0, A, T, Tgap, plate, period, cycles,
+        hit, tHit, yHit, xHit, yExit, vyExit, yScreen, angle,
+        maxAbsY, tField, tScreen: T + Tgap
+      },
+      stateInSeg
+    };
+    sim.stateAt = tt => stateAt(sim, tt);
+    return sim;
+  }
+
+  function stateAt(sim, t) {
+    t = Math.min(Math.max(t, 0), sim.tEnd);
+    let seg = sim.segs[sim.segs.length - 1];
+    for (const s of sim.segs) {
+      if (t <= s.t1 + 1e-15) { seg = s; break; }
+    }
+    return sim.stateInSeg(seg, t);
+  }
+
+  function crossCheck(P, sim) {
+    const Tfield = sim.summary.tField;
+    if (!(Tfield > 1e-12)) return { devY: 0, devVy: 0, ok: true, N: 0, Tfield: 0 };
+    const N = 4000, dt = Tfield / N;
+    let y = 0, vy = 0, devY = 0, devVy = 0;
+    const aAt = tt => P.qm * Efield(P, tt);
+    for (let i = 0; i < N; i++) {
+      const tm = (i + 0.5) * dt, a = aAt(tm);
+      y += vy * dt + 0.5 * a * dt * dt;
+      vy += a * dt;
+      if (i % 400 === 399) {
+        const st = stateAt(sim, (i + 1) * dt);
+        devY = Math.max(devY, Math.abs(st.y - y));
+        devVy = Math.max(devVy, Math.abs(st.vy - vy));
+      }
+    }
+    return {
+      devY, devVy,
+      relVy: devVy / Math.max(1, Math.abs(P.qm) * (P.U0 / P.d) * Tfield),
+      ok: devY < 1e-6 && devVy / Math.max(1, Math.abs(P.qm) * (P.U0 / P.d) * Tfield) < 1e-3,
+      N, Tfield
+    };
+  }
+
+  function phaseFamily(P) {
+    const out = [];
+    for (let deg = 0; deg < 360; deg += 15) {
+      const Q = Object.assign({}, P, { phiDeg: deg });
+      out.push({ deg, sim: simulate(Q) });
+    }
+    return out;
+  }
+
+  return { simulate, stateAt, crossCheck, phaseFamily, firstRoot, Efield };
+})();
+window.PHYS = PHYS;
+</script>
+
+<script id="ui">
+'use strict';
+/* =====================================================================
+ * UI：参数、动画、图表、过程卡片、解题、导出
+ * ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const FONT = '"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif';
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nfix = (x, d = 2) => {
+  if (x == null || !isFinite(x)) return '—';
+  let s = Number(x).toFixed(d);
+  if (s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  return s === '-0' ? '0' : s;
+};
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+function sup(e) { return String(e).replace(/-/g, '⁻').replace(/[0-9]/g, c => SUP[+c]); }
+function fmtSci(x, d = 2) {
+  if (x == null || !isFinite(x)) return '—';
+  if (x === 0) return '0';
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  const m = x / Math.pow(10, e);
+  return nfix(m, d) + '×10' + sup(e);
+}
+const fmtT = t => nfix(t * 1e9, 2) + ' ns';
+const fmtMM = y => nfix(y * 1e3, 3) + ' mm';
+const fmtVY = v => fmtSci(v, 3) + ' m/s';
+const fmtA = a => fmtSci(a, 2) + ' m/s²';
+const fmtE = e => nfix(e, 0) + ' V/m';
+const fmtDeg = d => nfix(d, 1) + '°';
+const toast = (msg, type) => {
+  const box = $('#toasts'); if (!box) return;
+  const t = document.createElement('div'); t.className = 'toast ' + (type || ''); t.textContent = msg;
+  box.appendChild(t);
+  setTimeout(() => t.classList.add('out'), 2600);
+  setTimeout(() => t.remove(), 3200);
+};
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const evalNum = s => {
+  s = String(s == null ? '' : s).trim()
+    .replace(/[×xX]/g, '*').replace(/[−–—]/g, '-').replace(/π/g, 'Math.PI').replace(/\^/g, '**');
+  if (!s) return NaN;
+  try {
+    const v = Function('"use strict";return (' + s + ')')( );
+    return typeof v === 'number' && isFinite(v) ? v : NaN;
+  } catch (e) { return NaN; }
+};
+
+const PRESETS = [
+  {
+    id: 'square-full', name: '方波 · 一个周期（推荐）', wave: 'square',
+    qm: '-1.76e11', U0: '30', d: '10', L: '50', f: '200', phi: '0', v0: '1.0', screenGap: '30',
+    note: '电子先向下加速，再向上加速；出射 v_y≈0，但仍有偏转。'
+  },
+  {
+    id: 'square-half', name: '方波 · 半个周期（最大偏转）', wave: 'square',
+    qm: '-1.76e11', U0: '20', d: '10', L: '50', f: '100', phi: '0', v0: '1.0', screenGap: '30',
+    note: '整个穿越过程电场方向不变，偏转最大；出射纵向速度也最大。'
+  },
+  {
+    id: 'sine-full', name: '正弦 · 一个周期（φ=0）', wave: 'sine',
+    qm: '-1.76e11', U0: '30', d: '10', L: '50', f: '200', phi: '0', v0: '1.0', screenGap: '30',
+    note: '电场按正弦交变；从零相位进入时，出射 v_y≈0，但 y 不为零。'
+  },
+  {
+    id: 'sine-90', name: '正弦 · 相位 90°（回到中线）', wave: 'sine',
+    qm: '-1.76e11', U0: '30', d: '10', L: '50', f: '200', phi: '90', v0: '1.0', screenGap: '30',
+    note: '从场强最大处进入；一个完整周期后，y 和 v_y 都回到零。'
+  },
+  {
+    id: 'hit', name: '打到极板（U0 加倍）', wave: 'square',
+    qm: '-1.76e11', U0: '60', d: '10', L: '50', f: '200', phi: '0', v0: '1.0', screenGap: '30',
+    note: '偏转超过 d/2，电子在到达右端前打到下极板。'
+  },
+  {
+    id: 'positive', name: '正电子（向上偏转）', wave: 'square',
+    qm: '1.76e11', U0: '30', d: '10', L: '50', f: '200', phi: '0', v0: '1.0', screenGap: '30',
+    note: '正电荷受力与电场同向，轨迹与电子关于中线镜像。'
+  }
+];
+
+const App = {
+  P: null, sim: null, family: null, cross: null,
+  t: 0, playing: false, speed: 1, wave: 'square',
+  showField: true, showVec: true, showFamily: false,
+  dirty: true, lastSt: null
+};
+
+function fitCanvas(cv) {
+  const r = cv.getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return null;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = Math.round(r.width), H = Math.round(r.height);
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) {
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, W, H };
+}
+
+function niceStep(range, n) {
+  const raw = range / Math.max(1, n);
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+
+function txt(ctx, str, x, y, color, font, align) {
+  ctx.save();
+  ctx.font = font || ('12px ' + FONT);
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineWidth = 3; ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(255,253,248,.9)';
+  ctx.strokeText(str, x, y);
+  ctx.fillStyle = color || '#1b2333';
+  ctx.fillText(str, x, y);
+  ctx.restore();
+}
+
+function arrow(ctx, x1, y1, x2, y2, color, w) {
+  const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  if (len < 4) return;
+  const ux = dx / len, uy = dy / len;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w || 2;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * 7, y2 - uy * 7); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * 10 - uy * 4, y2 - uy * 10 + ux * 4);
+  ctx.lineTo(x2 - ux * 10 + uy * 4, y2 - uy * 10 - ux * 4);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function drawPlot(ctx, W, H, spec) {
+  ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, W, H);
+  const m = { l: 46, r: 12, t: 30, b: 27 };
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const s of spec.series) for (const p of s.pts) {
+    if (!isFinite(p[0]) || !isFinite(p[1])) continue;
+    if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+    if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+  }
+  if (spec.xMin != null) x0 = spec.xMin;
+  if (spec.xMax != null) x1 = spec.xMax;
+  if (!isFinite(x0) || !isFinite(y0)) {
+    ctx.font = '12px ' + FONT; ctx.fillStyle = '#8a93a6'; ctx.textAlign = 'center';
+    ctx.fillText('暂无数据', W / 2, H / 2);
+    return;
+  }
+  y0 = Math.min(y0, 0); y1 = Math.max(y1, 0);
+  if (x1 - x0 < 1e-12) { x0 -= 0.5; x1 += 0.5; }
+  if (y1 - y0 < 1e-12) { y0 -= 0.5; y1 += 0.5; }
+  const pad = (y1 - y0) * 0.08; y1 += pad; y0 -= pad;
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const X = x => m.l + (x - x0) / (x1 - x0) * pw;
+  const Y = y => m.t + ph - (y - y0) / (y1 - y0) * ph;
+  const ln = (a, b, c, d) => { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); };
+
+  ctx.font = '600 12.5px ' + FONT; ctx.fillStyle = '#1b2333'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(spec.title || '', 10, 14);
+  ctx.font = '10.5px ' + FONT; ctx.fillStyle = '#6b7488';
+  ctx.fillText(spec.yLabel || '', 8, m.t - 8);
+
+  const xt = niceStep(x1 - x0, Math.max(2, Math.floor(pw / 72)));
+  const yt = niceStep(y1 - y0, Math.max(2, Math.floor(ph / 34)));
+  const xd = clamp(-Math.floor(Math.log10(xt) + 1e-9), 0, 6);
+  const yd = clamp(-Math.floor(Math.log10(yt) + 1e-9), 0, 6);
+  ctx.font = '10px ' + FONT;
+  ctx.textAlign = 'center';
+  for (let v = Math.ceil(x0 / xt) * xt, k = 0; v <= x1 + xt * 1e-6 && k < 80; v += xt, k++) {
+    const x = X(v);
+    ctx.strokeStyle = '#ece6da'; ctx.lineWidth = 1; ln(x, m.t, x, m.t + ph);
+    ctx.fillStyle = '#6b7488'; ctx.fillText((Math.abs(v) < xt * 1e-6 ? 0 : v).toFixed(xd), x, m.t + ph + 11);
+  }
+  ctx.textAlign = 'right';
+  for (let v = Math.ceil(y0 / yt) * yt, k = 0; v <= y1 + yt * 1e-6 && k < 80; v += yt, k++) {
+    const y = Y(v);
+    ctx.strokeStyle = '#ece6da'; ctx.lineWidth = 1; ln(m.l, y, m.l + pw, y);
+    ctx.fillStyle = '#6b7488'; ctx.fillText((Math.abs(v) < yt * 1e-6 ? 0 : v).toFixed(yd), m.l - 6, y);
+  }
+  ctx.strokeStyle = '#b9b1a0'; ctx.lineWidth = 1; ctx.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+  if (y0 < 0 && y1 > 0) { ctx.strokeStyle = '#8a8271'; ln(m.l, Y(0), m.l + pw, Y(0)); }
+
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l, m.t, pw, ph); ctx.clip();
+  for (const s of spec.series) {
+    if (s.line !== false) {
+      ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 2; ctx.lineJoin = 'round'; ctx.beginPath();
+      let pen = false;
+      for (const p of s.pts) {
+        if (!isFinite(p[0]) || !isFinite(p[1])) { pen = false; continue; }
+        const x = X(p[0]), y = Y(p[1]);
+        if (pen) ctx.lineTo(x, y); else { ctx.moveTo(x, y); pen = true; }
+      }
+      ctx.stroke();
+    }
+    if (s.points) {
+      ctx.fillStyle = s.color;
+      for (const p of s.pts) {
+        if (!isFinite(p[0]) || !isFinite(p[1])) continue;
+        ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 2.6, 0, 6.3); ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+
+  if (spec.cursor != null && isFinite(spec.cursor)) {
+    ctx.strokeStyle = 'rgba(224,49,49,.65)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ln(X(spec.cursor), m.t, X(spec.cursor), m.t + ph);
+    ctx.setLineDash([]);
+  }
+  for (const s of spec.series) {
+    if (!s.dot) continue;
+    const x = X(s.dot[0]), y = Y(s.dot[1]);
+    ctx.beginPath(); ctx.arc(x, y, 4.2, 0, 6.3);
+    ctx.fillStyle = s.color; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#fffdf8'; ctx.stroke();
+  }
+  if (spec.series.length > 1) {
+    ctx.font = '10px ' + FONT; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    let lx = W - 10;
+    for (let i = spec.series.length - 1; i >= 0; i--) {
+      const s = spec.series[i];
+      const tw = ctx.measureText(s.name || '').width;
+      ctx.fillStyle = '#3a4358'; ctx.fillText(s.name || '', lx, 14);
+      ctx.strokeStyle = s.color; ctx.lineWidth = 3; ln(lx - tw - 14, 14, lx - tw - 4, 14);
+      lx -= tw + 24;
+    }
+  }
+  ctx.font = '10px ' + FONT; ctx.fillStyle = '#6b7488'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText(spec.xLabel || '', W - m.r, H - 8);
+}
+
+/* ---------- 参数 ---------- */
+const LAB = { qm: '比荷', U0: '电压', d: '板间距', L: '板长', f: '频率', phi: '相位', v0: '入射速度', screenGap: '屏距' };
+
+function readParams() {
+  const v = id => evalNum($('#p_' + id).value);
+  const qm = v('qm'), U0 = v('U0'), dmm = v('d'), Lmm = v('L');
+  const v0u = v('v0'), fMHz = v('f'), phi = v('phi'), sgap = v('screenGap');
+  const errors = {};
+  if (!isFinite(qm) || qm === 0) errors.qm = '比荷需为非零数（负值表示负电荷）';
+  if (!isFinite(U0) || !(U0 > 0)) errors.U0 = '电压需大于 0';
+  if (!isFinite(dmm) || !(dmm > 0)) errors.d = '板间距需大于 0';
+  if (!isFinite(Lmm) || !(Lmm > 0)) errors.L = '板长需大于 0';
+  if (!isFinite(v0u) || !(v0u > 0)) errors.v0 = '入射速度需大于 0';
+  if (!isFinite(fMHz) || !(fMHz > 0)) errors.f = '频率需大于 0';
+  if (!isFinite(phi) || phi < 0 || phi > 360) errors.phi = '相位需在 0–360° 之间';
+  if (!isFinite(sgap) || !(sgap > 0)) errors.screenGap = '屏距需大于 0';
+  const P = {
+    qm, U0, d: dmm / 1000, L: Lmm / 1000,
+    v0: v0u * 1e7, f: fMHz * 1e6, phiDeg: phi, screenGap: sgap / 1000,
+    wave: App.wave
+  };
+  return { ok: Object.keys(errors).length === 0, P, errors };
+}
+
+function setErrors(errors) {
+  const keys = Object.keys(errors);
+  const box = $('#errBox');
+  box.hidden = keys.length === 0;
+  if (keys.length) {
+    box.textContent = '参数有误：' + keys.map(k => LAB[k] || k).join('、') + '。请修正后再播放。';
+  }
+  $$('.prow[data-key]').forEach(row => {
+    const key = row.dataset.key, err = errors[key], h = row.querySelector('.phint');
+    row.classList.toggle('err', !!err);
+    if (h) h.textContent = err || h.dataset.base || '';
+  });
+}
+
+function updateWaveSeg() {
+  $$('#waveSeg button').forEach(b => b.classList.toggle('on', b.dataset.wave === App.wave));
+}
+
+function updatePill() {
+  if (!App.P) return;
+  const qm = App.P.qm, a = Math.abs(qm);
+  let name = '自定义粒子';
+  if (a > 1.7e11 && a < 1.8e11) name = qm > 0 ? '正电子' : '电子';
+  else if (a > 9e7 && a < 1e8) name = qm > 0 ? '质子' : '负质子';
+  $('#pill').innerHTML = '<i></i>' + esc(name) + ' · q/m = ' + esc(fmtSci(qm)) + ' C/kg';
+}
+
+function applyPreset(id, silent) {
+  const p = PRESETS.find(x => x.id === id) || PRESETS[0];
+  $('#preset').value = p.id;
+  $('#p_qm').value = p.qm; $('#p_U0').value = p.U0; $('#p_d').value = p.d;
+  $('#p_L').value = p.L; $('#p_f').value = p.f; $('#p_phi').value = p.phi;
+  $('#p_v0').value = p.v0; $('#p_screenGap').value = p.screenGap;
+  $('#phiRange').value = p.phi;
+  App.wave = p.wave; updateWaveSeg();
+  recompute();
+  $('#stageSub').textContent = p.note || '';
+  if (!silent) toast('已载入：' + p.name, 'ok');
+}
+
+function recompute() {
+  const r = readParams();
+  App.P = r.P;
+  setErrors(r.errors);
+  if (!r.ok) {
+    App.playing = false; updatePlayBtn();
+    return;
+  }
+  const sim = PHYS.simulate(r.P);
+  App.sim = sim;
+  App.family = PHYS.phaseFamily(r.P);
+  App.cross = PHYS.crossCheck(r.P, sim);
+  App.t = 0; App.playing = false; App.lastSt = null;
+  App.dirty = true;
+  renderProcess();
+  renderResults();
+  renderSolution();
+  renderInfo();
+  renderFieldStrip();
+  updatePill();
+  updatePlayBtn();
+}
+
+/* ---------- 右侧面板 ---------- */
+function renderProcess() {
+  const sim = App.sim;
+  if (!sim) { $('#processList').innerHTML = '<p class="muted">请先修正参数。</p>'; return; }
+  $('#processList').innerHTML = sim.phases.map((p, i) =>
+    '<article class="ph" data-i="' + i + '" data-t="' + p.t0 + '">' +
+    '<header><b class="ph-n">' + (i + 1) + '</b><span>' + esc(fmtT(p.t0)) + ' → ' + esc(fmtT(p.t1)) + '</span></header>' +
+    '<h5>' + esc(p.title) + '</h5>' +
+    '<ul>' + p.lines.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>' +
+    '<footer>' + esc(p.end) + '</footer></article>'
+  ).join('');
+}
+
+function renderResults() {
+  const sim = App.sim;
+  if (!sim) { $('#resultBox').innerHTML = '<p class="muted">请先修正参数。</p>'; return; }
+  const S = sim.summary, P = sim.P, c = App.cross;
+  const tile = (a, b) => '<div class="tile"><span>' + a + '</span><b>' + b + '</b></div>';
+  const row = (a, b) => '<tr><td>' + a + '</td><td>' + b + '</td></tr>';
+  let html = '<div class="tiles">' +
+    tile('出射偏转 y', S.hit ? '打板' : fmtMM(S.yExit)) +
+    tile('出射 v_y', S.hit ? '—' : fmtVY(S.vyExit)) +
+    tile('屏幕偏转', S.hit ? '—' : fmtMM(S.yScreen)) +
+    tile('穿越时间 T', fmtT(S.T)) +
+    '</div>';
+  html += '<table class="kv"><tbody>' +
+    row('周期 T_f = 1/f', fmtT(S.period)) +
+    row('穿越时间 T = L/v₀', fmtT(S.T)) +
+    row('周期数 f·T', nfix(S.cycles, 3)) +
+    row('场强幅值 E₀ = U₀/d', fmtE(S.E0)) +
+    row('加速度 a₀ = (q/m)E₀', fmtA(S.A)) +
+    row('全过程最大 |y|', fmtMM(S.maxAbsY)) +
+    row('出射角 tanθ = v_y/v₀', S.hit ? '—' : nfix(Math.tan((S.angle || 0) * Math.PI / 180), 4)) +
+    row('屏幕偏转 y_s', S.hit ? '—' : fmtMM(S.yScreen)) +
+    row('是否打板', S.hit ? '<span class="badge bad">是</span>' : '<span class="badge ok">否</span>') +
+    (S.hit ? row('打板时刻 / 位置', fmtT(S.tHit) + ' / y=' + fmtMM(S.yHit)) : '') +
+    row('解析 vs 数值', c ? ('Δy≈' + nfix(c.devY * 1e6, 2) + ' µm，Δv_y≈' + nfix(c.devVy, 2) + ' m/s（' + nfix(c.relVy * 1e6, 1) + ' ppm）') : '—') +
+    '</tbody></table>';
+  if (S.hit) {
+    html += '<div class="qbox"><b>粒子打到' + (S.yHit > 0 ? '上' : '下') + '极板。</b><br>' +
+      '在 t = ' + esc(fmtT(S.tHit)) + '，y = ' + esc(fmtMM(S.yHit)) + '，x = ' + esc(fmtMM(S.xHit)) + ' 处离开场区之前就撞板了。<br>' +
+      '想让它通过：增大 d、减小 U₀，或提高 v₀（缩短穿越时间）。</div>';
+  } else if (Math.abs(S.cycles - Math.round(S.cycles)) < 0.02) {
+    html += '<div class="qbox">f·T ≈ ' + esc(nfix(S.cycles, 2)) + ' 个整周期：出射纵向速度 v_y ≈ 0，但偏转 y 不一定为 0——速度增量抵消了，位移没有。</div>';
+  } else if (Math.abs(S.cycles - 0.5) < 0.02) {
+    html += '<div class="qbox">f·T ≈ 0.5 个周期：电场在穿越过程中基本不反向，出射纵向速度接近最大，偏转也最大。</div>';
+  }
+  html += '<p class="note">“解析 vs 数值”是用 4000 步数值积分对场区内运动做的对照；偏差应远小于 1%。</p>';
+  $('#resultBox').innerHTML = html;
+}
+
+function solSec(n, title, rows) {
+  return '<section class="sol"><h5><span class="sol-n">' + n + '</span><span>' + title + '</span></h5>' +
+    '<div class="eqs">' + rows.map(r => '<div class="eq-t">' + r.tag + '</div><div class="eq-b">' + r.body + '</div>').join('') + '</div></section>';
+}
+
+function renderSolution() {
+  const sim = App.sim;
+  if (!sim) { $('#solutionBox').innerHTML = '<p class="muted">请先修正参数。</p>'; return; }
+  const S = sim.summary, P = sim.P;
+  const M = s => '<span class="math">' + s + '</span>';
+  let n = 0;
+  const sec = (title, rows) => solSec(++n, title, rows);
+  let html = '';
+
+  html += sec('已知与换算', [
+    { tag: '比荷', body: M('q/m = ' + fmtSci(P.qm) + ' C/kg') + '，' + (P.qm > 0 ? '正电荷' : '负电荷') },
+    { tag: '场强', body: M('E<sub>0</sub> = U<sub>0</sub>/d = ' + nfix(P.U0, 0) + ' / ' + nfix(P.d, 4) + ' = ' + fmtE(S.E0)) },
+    { tag: '加速度', body: M('a<sub>0</sub> = (q/m)E<sub>0</sub> = ' + fmtA(S.A)) },
+    { tag: '几何', body: '板长 ' + fmtMM(P.L) + '，板间距 ' + fmtMM(P.d) + '，屏距 ' + fmtMM(P.screenGap) }
+  ]);
+
+  if (P.wave === 'square') {
+    html += sec('方波：分段匀变速', [
+      { tag: '波形', body: M('E(t) = ±E<sub>0</sub>') + '，每半周期换向；' + M('a<sub>y</sub> = ±a<sub>0</sub>') },
+      { tag: '穿越', body: M('T = L/v<sub>0</sub> = ' + fmtT(S.T)) + '，' + M('T<sub>f</sub> = 1/f = ' + fmtT(S.period)) + '，' + M('fT = ' + nfix(S.cycles, 3)) },
+      { tag: '每段', body: M('v<sub>y</sub> = v<sub>y0</sub> + a<sub>y</sub>t') + '，' + M('y = y<sub>0</sub> + v<sub>y0</sub>t + ½a<sub>y</sub>t²') }
+    ]);
+    const rows = [];
+    sim.segs.filter(s => s.kind === 'field').slice(0, 4).forEach((s, i) => {
+      rows.push({
+        tag: '第 ' + (i + 1) + ' 段',
+        body: M('a<sub>y</sub> = ' + fmtA(s.a)) + '，' + M('Δt = ' + fmtT(s.dt)) + '，' + M('Δv<sub>y</sub> = ' + fmtVY(s.vv1 - s.vv0)) + '，' + M('Δy = ' + fmtMM(s.yy1 - s.yy0))
+      });
+    });
+    if (sim.segs.filter(s => s.kind === 'field').length > 4) rows.push({ tag: '…', body: '后略（可在“过程”里逐段看）' });
+    html += sec('逐段代入', rows);
+  } else {
+    const omega = 2 * Math.PI * P.f;
+    html += sec('正弦场：解析积分', [
+      { tag: '波形', body: M('E(t) = E<sub>0</sub> sin(ωt + φ)') + '，' + M('ω = 2πf = ' + fmtSci(omega, 2) + ' rad/s') },
+      { tag: '加速度', body: M('a<sub>y</sub>(t) = a<sub>0</sub> sin(ωt + φ)') },
+      { tag: '速度', body: M('v<sub>y</sub>(t) = (a<sub>0</sub>/ω)[cos φ − cos(ωt + φ)]') },
+      { tag: '位移', body: M('y(t) = (a<sub>0</sub>/ω²)[sin φ − sin(ωt + φ) + ωt cos φ]') },
+      { tag: '穿越', body: M('T = L/v<sub>0</sub> = ' + fmtT(S.T)) + '，' + M('fT = ' + nfix(S.cycles, 3)) }
+    ]);
+  }
+
+  html += sec('出射与屏幕', [
+    { tag: '出射 y', body: S.hit ? '在 t = ' + fmtT(S.tHit) + ' 打板，未出射' : M('y(T) = ' + fmtMM(S.yExit)) },
+    { tag: '出射 v_y', body: S.hit ? '—' : M('v<sub>y</sub>(T) = ' + fmtVY(S.vyExit)) },
+    { tag: '出射角', body: S.hit ? '—' : M('tanθ = v<sub>y</sub>/v<sub>0</sub> = ' + nfix(Math.tan((S.angle || 0) * Math.PI / 180), 4)) + '，θ ≈ ' + fmtDeg(S.angle || 0) },
+    { tag: '屏幕', body: S.hit ? '—' : M('y<sub>s</sub> = y(T) + v<sub>y</sub>(T)·D/v<sub>0</sub> = ' + fmtMM(S.yScreen)) },
+    { tag: '打板条件', body: M('|y| ≥ d/2 = ' + fmtMM(S.plate)) + '（在场区内）' }
+  ]);
+
+  html += '<p class="note">正方向取 y 向上；正电荷受力沿 E，负电荷相反。方波在 sin(ωt+φ)=0 时取 +1，因此半周期边界处加速度发生跳变，速度连续、位置连续。</p>';
+  $('#solutionBox').innerHTML = html;
+}
+
+function renderInfo() {
+  const sim = App.sim;
+  if (!sim) { $('#infoBox').innerHTML = '<p class="muted">请先修正参数。</p>'; return; }
+  const S = sim.summary, P = sim.P;
+  $('#infoBox').innerHTML =
+    '<h4 style="font-size:13px;margin:0 0 4px">怎么读这个演示</h4>' +
+    '<ul>' +
+    '<li>两块平行板之间是场区；粒子从左侧中心以 v₀ 水平射入，x 方向始终匀速。</li>' +
+    '<li>橙色小球是粒子；绿色实线是已经走过的轨迹，浅绿虚线是完整轨迹。</li>' +
+    '<li>场箭头表示 E 的方向；正电荷受力沿 E，负电荷相反。</li>' +
+    '<li>右侧竖线是荧光屏；屏幕点的纵坐标就是“屏幕偏转”。</li>' +
+    '<li>“相位族”会叠加入射相位 0–360° 的一组轨迹，用来观察相位对偏转的影响。</li>' +
+    '<li>画面为了让偏转更清楚，纵向比例有放大；读数以坐标轴和左上角 HUD 为准。</li>' +
+    '</ul>' +
+    '<h4 style="font-size:13px;margin:12px 0 4px">为什么交变电场会偏转</h4>' +
+    '<p style="font-size:12.5px;line-height:1.7;color:var(--ink2)">' +
+    '电场方向随时间改变，粒子的纵向加速度也随之改变。穿越时间 T 与周期 T_f 的比值 fT 决定了“加速/减速”是否能抵消：' +
+    '整数周期时出射 v_y 可能回到零，但位移不一定回到零；半个周期时通常偏转和出射速度都较大。' +
+    '</p>' +
+    '<h4 style="font-size:13px;margin:12px 0 4px">模型假设</h4>' +
+    '<ul>' +
+    '<li>极板间电场均匀，忽略边缘效应、重力、相对论效应和辐射。</li>' +
+    '<li>粒子从 (0,0) 以水平速度 v₀ 进入；场区仅 0 ≤ x ≤ L。</li>' +
+    '<li>方波为理想瞬时换向；正弦为理想正弦。</li>' +
+    '<li>屏足够远，出射后做匀速直线运动。</li>' +
+    '</ul>' +
+    '<h4 style="font-size:13px;margin:12px 0 4px">当前工作点</h4>' +
+    '<table class="kv"><tbody>' +
+    '<tr><td>波形</td><td>' + (P.wave === 'sine' ? '正弦' : '方波') + '</td></tr>' +
+    '<tr><td>比荷 q/m</td><td>' + esc(fmtSci(P.qm)) + ' C/kg</td></tr>' +
+    '<tr><td>场强 E₀</td><td>' + esc(fmtE(S.E0)) + '</td></tr>' +
+    '<tr><td>加速度 a₀</td><td>' + esc(fmtA(S.A)) + '</td></tr>' +
+    '<tr><td>穿越 / 周期</td><td>' + esc(fmtT(S.T)) + ' / ' + esc(fmtT(S.period)) + '</td></tr>' +
+    '<tr><td>f·T</td><td>' + esc(nfix(S.cycles, 3)) + '</td></tr>' +
+    '<tr><td>入射相位</td><td>' + esc(fmtDeg(P.phiDeg)) + '</td></tr>' +
+    '<tr><td>板间距 / 板长</td><td>' + esc(fmtMM(P.d)) + ' / ' + esc(fmtMM(P.L)) + '</td></tr>' +
+    '</tbody></table>';
+}
+
+/* ---------- 电场极性条 ---------- */
+function renderFieldStrip() {
+  const sim = App.sim;
+  if (!sim) { $('#fieldStrip').innerHTML = ''; return; }
+  const total = sim.tEnd || 1;
+  $('#fieldStrip').innerHTML = sim.segs.map((s, i) => {
+    const cls = s.kind === 'free' ? 'free' : (s.sign > 0 ? 'pos' : 'neg');
+    const label = s.kind === 'free' ? '出' : (s.sign > 0 ? '+' : '−');
+    const w = Math.max(1, (s.t1 - s.t0) / total * 100);
+    const title = (s.kind === 'free' ? '自由飞行' : '电场' + (s.sign > 0 ? '向上' : '向下')) + ' · ' + fmtT(s.t0) + ' → ' + fmtT(s.t1);
+    return '<div class="fs ' + cls + '" data-i="' + i + '" data-t="' + s.t0 + '" style="flex-grow:' + w.toFixed(3) + '" title="' + esc(title) + '">' + label + '</div>';
+  }).join('');
+}
+
+/* ---------- 动画 ---------- */
+function drawScene(ctx, W, H, sim, st) {
+  const P = sim.P, S = sim.summary;
+  let famMax = 0;
+  if (App.showFamily && App.family) {
+    for (const item of App.family) {
+      const q = item.sim.summary;
+      famMax = Math.max(famMax, q.maxAbsY, Math.abs(q.yScreen || 0));
+    }
+  }
+  const yMax = Math.max(S.plate * 1.35, Math.abs(S.yScreen || 0) * 1.22 + 0.002, S.maxAbsY * 1.25, famMax * 1.15, 0.008);
+  const xmin = -0.012, xmax = P.L + P.screenGap + 0.008;
+  const pad = 26;
+  const sx = (W - 2 * pad) / (xmax - xmin);
+  const sy = (H - 2 * pad) / (2 * yMax);
+  const X = x => pad + (x - xmin) * sx;
+  const Y = y => H / 2 - y * sy;
+
+  ctx.fillStyle = '#fffdf8'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(70,90,130,.06)'; ctx.lineWidth = 1; ctx.beginPath();
+  for (let x = 0.5; x < W; x += 20) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  for (let y = 0.5; y < H; y += 20) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  ctx.stroke();
+
+  /* 粒子源 */
+  const srcX0 = X(-0.012), srcX1 = X(0), srcY0 = Y(0.0018), srcY1 = Y(-0.0018);
+  ctx.fillStyle = '#c9ced8'; ctx.strokeStyle = '#6b7280'; ctx.lineWidth = 1;
+  ctx.fillRect(srcX0, srcY0, srcX1 - srcX0, srcY1 - srcY0);
+  ctx.strokeRect(srcX0, srcY0, srcX1 - srcX0, srcY1 - srcY0);
+  txt(ctx, '粒子源', (srcX0 + srcX1) / 2, srcY1 + 12, '#566078', '11px ' + FONT);
+  ctx.strokeStyle = '#9aa3b5'; ctx.setLineDash([4, 4]); ctx.beginPath();
+  ctx.moveTo(srcX1, Y(0)); ctx.lineTo(X(0), Y(0)); ctx.stroke(); ctx.setLineDash([]);
+
+  /* 场区 */
+  const x0 = X(0), x1 = X(P.L), yT = Y(S.plate), yB = Y(-S.plate);
+  ctx.fillStyle = 'rgba(28,126,214,.05)';
+  ctx.fillRect(x0, yT, x1 - x0, yB - yT);
+
+  /* 极板 */
+  const th = Math.max(3, Math.min(7, H * 0.012));
+  ctx.fillStyle = '#c7ccd6'; ctx.strokeStyle = '#6b7280'; ctx.lineWidth = 1;
+  ctx.fillRect(x0, yT - th, x1 - x0, th); ctx.strokeRect(x0, yT - th, x1 - x0, th);
+  ctx.fillRect(x0, yB, x1 - x0, th); ctx.strokeRect(x0, yB, x1 - x0, th);
+
+  /* 场箭头 */
+  if (App.showField) {
+    const frac = Math.min(1, Math.abs(st.E) / Math.max(S.E0, 1e-12));
+    const alpha = 0.12 + 0.88 * frac;
+    ctx.save(); ctx.globalAlpha = alpha;
+    for (let i = 0; i < 5; i++) {
+      const xx = X(P.L * (0.12 + 0.19 * i));
+      const ya = Y(-S.plate * 0.72), yb = Y(S.plate * 0.72);
+      if (st.E >= 0) arrow(ctx, xx, ya, xx, yb, '#1c7ed6', 1.6);
+      else arrow(ctx, xx, yb, xx, ya, '#1c7ed6', 1.6);
+    }
+    ctx.restore();
+    txt(ctx, 'E', X(P.L * 0.5), Y(S.plate * 0.86), '#1c7ed6', 'italic 600 12px ' + FONT);
+  }
+
+  /* 极板极性 */
+  const pAlpha = 0.25 + 0.75 * Math.min(1, Math.abs(st.E) / Math.max(S.E0, 1e-12));
+  ctx.save(); ctx.globalAlpha = pAlpha;
+  const topSign = st.E >= 0 ? '−' : '+', botSign = st.E >= 0 ? '+' : '−';
+  txt(ctx, topSign, X(P.L * 0.06), yT - 13, topSign === '+' ? '#c92a2a' : '#1c7ed6', '700 17px ' + FONT);
+  txt(ctx, botSign, X(P.L * 0.06), yB + 14, botSign === '+' ? '#c92a2a' : '#1c7ed6', '700 17px ' + FONT);
+  ctx.restore();
+
+  /* 中线 */
+  ctx.strokeStyle = 'rgba(86,96,120,.45)'; ctx.setLineDash([5, 5]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(X(-0.006), Y(0)); ctx.lineTo(X(P.L + P.screenGap), Y(0)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* 荧光屏 */
+  const xs = X(P.L + P.screenGap);
+  ctx.save(); ctx.shadowColor = 'rgba(43,138,62,.55)'; ctx.shadowBlur = 9;
+  ctx.strokeStyle = '#2b8a3e'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(xs, Y(yMax)); ctx.lineTo(xs, Y(-yMax)); ctx.stroke();
+  ctx.restore();
+  const tick = niceStep(2 * yMax, 8);
+  ctx.strokeStyle = 'rgba(43,138,62,.55)'; ctx.lineWidth = 1;
+  for (let v = Math.ceil(-yMax / tick) * tick; v <= yMax + 1e-12; v += tick) {
+    ctx.beginPath(); ctx.moveTo(xs, Y(v)); ctx.lineTo(xs + 5, Y(v)); ctx.stroke();
+  }
+  txt(ctx, '荧光屏', xs, Y(-yMax) - 14, '#2b8a3e', '600 11px ' + FONT);
+
+  /* 相位族 */
+  if (App.showFamily && App.family) {
+    ctx.save(); ctx.strokeStyle = 'rgba(86,96,120,.17)'; ctx.lineWidth = 1.1;
+    for (const item of App.family) {
+      const f = item.sim;
+      ctx.beginPath();
+      f.samples.forEach((s, i) => {
+        const x = X(s.x), y = Y(s.y);
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* 完整轨迹（虚影） */
+  ctx.strokeStyle = 'rgba(43,138,62,.28)'; ctx.lineWidth = 1.6; ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  sim.samples.forEach((s, i) => {
+    const x = X(s.x), y = Y(s.y);
+    if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+  });
+  ctx.stroke(); ctx.setLineDash([]);
+
+  /* 已走轨迹 */
+  ctx.strokeStyle = '#2b8a3e'; ctx.lineWidth = 2.2; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  let pen = false;
+  for (const s of sim.samples) {
+    if (s.t > st.t + 1e-15) break;
+    const x = X(s.x), y = Y(s.y);
+    if (pen) ctx.lineTo(x, y); else { ctx.moveTo(x, y); pen = true; }
+  }
+  ctx.stroke();
+
+  /* 屏幕落点 */
+  if (S.yScreen != null) {
+    ctx.fillStyle = 'rgba(43,138,62,.28)';
+    ctx.beginPath(); ctx.arc(xs, Y(S.yScreen), 4, 0, 6.3); ctx.fill();
+  }
+  if (st.x >= P.L + P.screenGap - 1e-9 && !S.hit) {
+    ctx.save(); ctx.shadowColor = 'rgba(43,138,62,.8)'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#2b8a3e'; ctx.beginPath(); ctx.arc(xs, Y(st.y), 5.5, 0, 6.3); ctx.fill();
+    ctx.restore();
+  }
+
+  /* 粒子 */
+  const px = X(st.x), py = Y(st.y);
+  ctx.save();
+  ctx.shadowColor = 'rgba(232,89,12,.65)'; ctx.shadowBlur = 14;
+  ctx.fillStyle = '#e8590c'; ctx.strokeStyle = '#fffdf8'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(px, py, 6, 0, 6.3); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#fff'; ctx.font = '700 10px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(P.qm > 0 ? '+' : '−', px, py + 0.5);
+
+  /* 速度和力 */
+  if (App.showVec) {
+    const mag = Math.hypot(st.vx, st.vy);
+    const L = 22 + 52 * Math.min(1, mag / (P.v0 * 1.5));
+    if (mag > 1e-9) {
+      const ux = st.vx / mag, uy = st.vy / mag;
+      arrow(ctx, px, py, px + ux * L, py - uy * L, '#c2410c', 2);
+      txt(ctx, 'v', px + ux * L + 7, py - uy * L - 7, '#c2410c', '600 11px ' + FONT);
+    }
+    if (Math.abs(st.ay) > 1e-9) {
+      const d = Math.sign(st.ay);
+      arrow(ctx, px, py, px, py - d * 27, '#9c36b5', 2);
+      txt(ctx, 'qE', px + 15, py - d * 27, '#9c36b5', '600 11px ' + FONT);
+    }
+  }
+
+  /* 尺寸线 */
+  const dx = X(P.L + 0.004);
+  ctx.strokeStyle = '#566078'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(dx, yT); ctx.lineTo(dx, yB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(dx - 4, yT); ctx.lineTo(dx + 4, yT); ctx.moveTo(dx - 4, yB); ctx.lineTo(dx + 4, yB); ctx.stroke();
+  txt(ctx, 'd = ' + fmtMM(P.d), dx + 7, (yT + yB) / 2, '#566078', '11px ' + FONT, 'left');
+  const dy = yB + 30;
+  ctx.beginPath(); ctx.moveTo(X(0), dy); ctx.lineTo(X(P.L), dy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(X(0), dy - 4); ctx.lineTo(X(0), dy + 4); ctx.moveTo(X(P.L), dy - 4); ctx.lineTo(X(P.L), dy + 4); ctx.stroke();
+  txt(ctx, 'L = ' + fmtMM(P.L), (X(0) + X(P.L)) / 2, dy + 12, '#566078', '11px ' + FONT);
+
+  /* HUD */
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#1b2333'; ctx.font = '600 13px ui-monospace,Consolas,monospace';
+  ctx.fillText('t = ' + fmtT(st.t), 12, 21);
+  ctx.font = '11.5px ' + FONT; ctx.fillStyle = '#566078';
+  ctx.fillText('x = ' + fmtMM(st.x) + '，y = ' + fmtMM(st.y), 12, 38);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#1c7ed6'; ctx.font = '600 11.5px ' + FONT;
+  ctx.fillText('E = ' + fmtE(st.E), W - 12, 21);
+  ctx.fillStyle = '#9c36b5';
+  ctx.fillText('a_y = ' + fmtA(st.ay), W - 12, 37);
+  ctx.fillStyle = '#566078';
+  ctx.fillText('φ(t) = ' + fmtDeg((st.phase * 180 / Math.PI + 360) % 360), W - 12, 53);
+  ctx.textAlign = 'left';
+  ctx.fillText('T = ' + fmtT(S.T) + ' · T_f = ' + fmtT(S.period) + ' · fT = ' + nfix(S.cycles, 2), 12, H - 12);
+
+  if (st.x >= P.L - 1e-12 && !S.hit) txt(ctx, '出射', X(P.L) + 8, Y(0) - 14, '#2b8a3e', '600 11px ' + FONT, 'left');
+  if (S.hit && st.t >= S.tHit - 1e-15) {
+    const hx = X(S.xHit), hy = Y(S.yHit);
+    ctx.strokeStyle = '#e03131'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(hx - 6, hy - 6); ctx.lineTo(hx + 6, hy + 6); ctx.moveTo(hx + 6, hy - 6); ctx.lineTo(hx - 6, hy + 6); ctx.stroke();
+    txt(ctx, '打到极板', hx, hy - 14, '#e03131', '600 12px ' + FONT);
+  }
+  txt(ctx, 'y ↑', W - 44, H - 12, '#566078', '11px ' + FONT);
+}
+
+function renderCharts(st) {
+  const sim = App.sim;
+  if (!sim) return;
+  const S = sim.summary, P = sim.P;
+  const tNs = st.t * 1e9;
+  const draw = (id, spec) => {
+    const f = fitCanvas($('#' + id));
+    if (f) drawPlot(f.ctx, f.W, f.H, spec);
+  };
+
+  const yPts = sim.samples.map(s => [s.t * 1e9, s.y * 1e3]);
+  draw('chartY', {
+    title: '偏转 y-t', xLabel: 't / ns', yLabel: 'y / mm',
+    series: [{ name: 'y', color: '#2b8a3e', pts: yPts, dot: [tNs, st.y * 1e3] }],
+    cursor: tNs
+  });
+
+  const vyPts = sim.samples.map(s => [s.t * 1e9, s.vy / 1e6]);
+  draw('chartVy', {
+    title: '纵向速度 v_y-t', xLabel: 't / ns', yLabel: 'v_y / (10⁶ m/s)',
+    series: [{ name: 'v_y', color: '#7048e8', pts: vyPts, dot: [tNs, st.vy / 1e6] }],
+    cursor: tNs
+  });
+
+  let ePts;
+  if (P.wave === 'square') {
+    ePts = [];
+    let prev = null;
+    for (const s of sim.segs) {
+      const a = s.t0 * 1e9, b = s.t1 * 1e9;
+      if (s.kind === 'free') {
+        if (prev !== null) ePts.push([a, prev]);
+        ePts.push([a, 0], [b, 0]); prev = 0; continue;
+      }
+      const e = s.sign * S.E0;
+      if (prev !== null) ePts.push([a, prev]);
+      ePts.push([a, e], [b, e]); prev = e;
+    }
+  } else {
+    ePts = sim.samples.map(s => [s.t * 1e9, s.E]);
+  }
+  draw('chartE', {
+    title: '电场 E-t', xLabel: 't / ns', yLabel: 'E / (V/m)',
+    series: [{ name: 'E', color: '#1c7ed6', pts: ePts, dot: [tNs, st.E] }],
+    cursor: tNs
+  });
+
+  const fam = App.family || [];
+  const escPts = [], hitPts = [];
+  for (const item of fam) {
+    const f = item.sim.summary;
+    if (f.hit) hitPts.push([item.deg, f.yHit * 1e3]);
+    else escPts.push([item.deg, f.yScreen * 1e3]);
+  }
+  const curHit = S.hit;
+  const curPt = curHit ? [P.phiDeg, S.yHit * 1e3] : [P.phiDeg, S.yScreen * 1e3];
+  draw('chartPhase', {
+    title: '屏幕偏转 vs 入射相位', xLabel: 'φ / °', yLabel: '屏幕 y / mm',
+    xMin: 0, xMax: 360,
+    series: [
+      { name: '逸出', color: '#2b8a3e', pts: escPts, points: true, line: false, dot: curHit ? null : curPt },
+      { name: '打板', color: '#e03131', pts: hitPts, points: true, line: false, dot: curHit ? curPt : null }
+    ]
+  });
+}
+
+function draw() {
+  const sim = App.sim;
+  if (!sim) return;
+  const fit = fitCanvas($('#scene'));
+  if (fit) {
+    const st = PHYS.stateAt(sim, App.t);
+    App.lastSt = st;
+    drawScene(fit.ctx, fit.W, fit.H, sim, st);
+    renderCharts(st);
+    $('#tl').value = Math.round(App.t / sim.tEnd * 1000);
+    $('#tNow').textContent = 't = ' + fmtT(App.t) + ' / ' + fmtT(sim.tEnd);
+    $$('#processList .ph').forEach((el, i) => el.classList.toggle('on', i === st.i));
+    $$('#fieldStrip .fs').forEach((el, i) => el.classList.toggle('on', i === st.i));
+  }
+  App.dirty = false;
+}
+
+let lastTs = 0;
+function tick(ts) {
+  if (App.playing && App.sim) {
+    const dt = Math.min(0.05, Math.max(0, (ts - lastTs) / 1000));
+    const span = App.sim.tEnd;
+    App.t = Math.min(span, App.t + dt * App.speed * span / 5);
+    if (App.t >= span - 1e-15) { App.playing = false; updatePlayBtn(); }
+    App.dirty = true;
+  }
+  lastTs = ts;
+  if (App.dirty) draw();
+  requestAnimationFrame(tick);
+}
+
+function updatePlayBtn() {
+  const b = $('#btnPlay');
+  b.textContent = App.playing ? '暂停' : '播放';
+  b.classList.toggle('pri', !App.playing);
+}
+
+function seek(t) {
+  if (!App.sim) return;
+  App.t = clamp(t, 0, App.sim.tEnd);
+  App.playing = false;
+  updatePlayBtn();
+  App.dirty = true;
+}
+
+function togglePlay() {
+  if (!App.sim) return;
+  if (App.playing) { App.playing = false; }
+  else {
+    if (App.t >= App.sim.tEnd - 1e-15) App.t = 0;
+    App.playing = true;
+  }
+  updatePlayBtn();
+  App.dirty = true;
+}
+
+function nextSeg() {
+  if (!App.sim) return;
+  const st = PHYS.stateAt(App.sim, App.t);
+  const target = App.sim.segs[st.i].t1;
+  seek(target >= App.sim.tEnd - 1e-15 ? App.sim.tEnd : target);
+}
+
+function canvasPNG(cv, name) {
+  cv.toBlob(b => {
+    if (!b) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  }, 'image/png');
+}
+
+/* ---------- 绑定 ---------- */
+const scheduleRecompute = debounce(recompute, 140);
+
+function bind() {
+  $('#preset').addEventListener('change', e => applyPreset(e.target.value));
+  $('#btnReset').addEventListener('click', () => applyPreset($('#preset').value));
+  $('#btnReset2').addEventListener('click', () => seek(0));
+  $('#btnPlay').addEventListener('click', togglePlay);
+  $('#btnStep').addEventListener('click', nextSeg);
+  $('#btnPNG').addEventListener('click', () => canvasPNG($('#scene'), '交变电场偏转.png'));
+
+  $('#tl').addEventListener('input', e => {
+    if (!App.sim) return;
+    seek(+e.target.value / 1000 * App.sim.tEnd);
+  });
+  $('#speed').addEventListener('change', e => { App.speed = +e.target.value || 1; });
+
+  $('#phiRange').addEventListener('input', e => {
+    $('#p_phi').value = e.target.value;
+    scheduleRecompute();
+  });
+  $('#p_phi').addEventListener('input', e => {
+    const v = evalNum(e.target.value);
+    if (isFinite(v)) $('#phiRange').value = clamp(v, 0, 360);
+    scheduleRecompute();
+  });
+
+  $$('[data-key] input').forEach(inp => inp.addEventListener('input', scheduleRecompute));
+
+  $('#waveSeg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-wave]');
+    if (!b) return;
+    App.wave = b.dataset.wave;
+    updateWaveSeg();
+    recompute();
+  });
+
+  $('#chkField').addEventListener('change', e => { App.showField = e.target.checked; App.dirty = true; });
+  $('#chkVec').addEventListener('change', e => { App.showVec = e.target.checked; App.dirty = true; });
+  $('#chkFamily').addEventListener('change', e => { App.showFamily = e.target.checked; App.dirty = true; });
+
+  $('#tabs').addEventListener('click', e => {
+    const b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    $$('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $$('[id^="pane-"]').forEach(p => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab));
+  });
+
+  $('#processList').addEventListener('click', e => {
+    const el = e.target.closest('.ph');
+    if (el) seek(+el.dataset.t);
+  });
+  $('#fieldStrip').addEventListener('click', e => {
+    const el = e.target.closest('.fs');
+    if (el) seek(+el.dataset.t);
+  });
+
+  window.addEventListener('resize', debounce(() => { App.dirty = true; }, 100));
+}
+
+function init() {
+  $$('.prow .phint').forEach(h => { h.dataset.base = h.textContent; });
+  $('#preset').innerHTML = PRESETS.map(p => '<option value="' + p.id + '">' + esc(p.name) + '</option>').join('');
+  bind();
+  applyPreset(PRESETS[0].id, true);
+  requestAnimationFrame(tick);
+}
+
+init();
+
+</script>
+</body>
+</html>
