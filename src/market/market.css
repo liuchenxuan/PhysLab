@@ -1,0 +1,36 @@
+.mk{display:flex;flex-direction:column;gap:14px}
+.mk-head{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.mk-head h2{font:700 20px var(--serif);letter-spacing:.04em;margin-bottom:4px}
+.mk-actions{display:flex;gap:8px;flex-wrap:wrap}
+.mk-set{display:flex;flex-direction:column;gap:10px}
+.mk-reload{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mk-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.mk-tabs{margin:0;flex:1}
+.mk-tabs small{opacity:.6;margin-left:2px}
+.mk-search{min-width:220px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.mk-kinds{margin-bottom:14px}
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.mk-empty{grid-column:1/-1;padding:24px;text-align:center}
+.mk-card{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--paper);padding:14px;box-shadow:var(--shadow)}
+.mk-card.installed{border-color:#9fc5a6}
+.mk-card header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.mk-card h4{font:700 15px var(--sans)}
+.mk-cat{font-size:11px;font-weight:700;padding:1px 9px;border-radius:99px;white-space:nowrap}
+.mk-cat.official{background:#e7f1ff;color:#1c5fb8}
+.mk-cat.users{background:#e6f6ea;color:#237a3b}
+.mk-meta{font-size:12px;color:var(--ink3)}
+.mk-desc{font-size:13px;color:var(--ink2);flex:1}
+.mk-tags{display:flex;flex-wrap:wrap;gap:5px}
+.mk-kind{font-size:11px;padding:0 8px;border-radius:6px;background:var(--navy);color:#f3ecdc}
+.mk-tag{font-size:11px;color:var(--ink3)}
+.mk-status{font-size:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.mk-status ul{margin:4px 0 0 18px;padding:0;color:var(--ink2)}
+.mk-err{color:var(--bad);font:12px var(--mono);word-break:break-all}
+.mk-card footer{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.mk-card footer a{text-decoration:none;display:inline-flex;align-items:center}
+.mk-dev summary{cursor:pointer;font-weight:700}
+.mk-dev ol{margin:10px 0 0 20px;color:var(--ink2);line-height:1.9}
+.mk code,.mk-dev code{font:12px var(--mono);background:#f1ece0;padding:1px 5px;border-radius:4px}
+.banner.warn{background:#fff6e5;border:1px solid #f1d49b;color:#9a5a00}
+.banner.info{background:#eaf2fd;border:1px solid #b9d3f3;color:#1c5fb8}
+.banner.ok{background:#e9f7ec;border:1px solid #a9d8b3;color:#237a3b}

@@ -1,0 +1,326 @@
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true"><rect x="2" y="23" width="28" height="5" rx="2.5" fill="#f1e9d8"/><rect x="8" y="14" width="9" height="9" rx="1.5" fill="#ff8a3d"/><path d="M24 23V5" stroke="#f1e9d8" stroke-width="1.6"/><path d="M24 5l-9 3.5 9 3.5z" fill="#ff4d4d"/></svg>
+    <div><b>PhysLab</b><span>插件化物理模拟实验台</span></div>
+  </div>
+  <nav class="nav" id="nav" aria-label="主导航">
+    <button data-view="sim" class="on">模拟</button>
+    <button data-view="sweep">参数扫描</button>
+    <button data-view="ai">AI 实验室</button>
+    <button data-view="set">模型配置</button>
+    <button data-view="market" id="navMarket">插件市场</button>
+  </nav>
+  <button class="pill" id="aiPill" title="点击配置 AI 模型"></button>
+</header>
+
+<div class="cfgbar">
+  <div class="cfg-g grow">
+    <label for="cfgSel">配置</label>
+    <select id="cfgSel" aria-label="选择配置"></select>
+    <input type="text" id="cfgName" aria-label="配置名称" placeholder="配置名称">
+  </div>
+  <div class="cfg-g">
+    <button class="btn pri" id="btnNew">＋ 新建配置</button>
+    <button class="btn" id="btnDup">复制</button>
+    <button class="btn" id="btnCombo" title="把多个例题首尾相接成一条轨道：同一物体依次通过，数据自动衔接，画在同一张图上">拼合例题</button>
+    <button class="btn" id="btnDel">删除</button>
+  </div>
+  <span class="sp"></span>
+  <div class="cfg-g">
+    <button class="btn" id="btnImport">导入备份</button>
+    <button class="btn" id="btnExport">导出备份 .json</button>
+    <button class="btn" id="btnPage">导出本配置网页 .html</button>
+  </div>
+  <input type="file" id="fileImport" accept=".json,application/json" hidden>
+</div>
+
+<main class="wrap">
+
+<!-- ================= 模拟 ================= -->
+<section class="view on" id="view-sim">
+  <div class="simgrid" id="simGrid" data-m="chart">
+    <aside class="card side" id="paramCard">
+      <div class="card-h"><h3>参数设置</h3><span class="sp"></span><span class="muted">可输入 √3/3、π/6、3/8</span></div>
+      <div class="seg" id="modelSeg"><button data-model="belt">传送带</button><button data-model="board">板块</button><button data-model="duo">碰撞相遇</button><button data-model="boat">人船</button></div>
+      <label class="fld"><span>载入经典例题（会覆盖当前参数）</span><select id="presetSel"></select></label>
+      <div id="errBanner" class="banner bad" hidden></div>
+      <div id="comboBox"></div>
+      <div id="paramBox"></div>
+      <div class="keypad" id="keypad" aria-label="符号快捷输入">
+        <button data-ins="√">√</button><button data-ins="π">π</button><button data-ins="°">°</button><button data-ins="/">/</button><button data-ins="(">(</button><button data-ins=")">)</button><button data-ins="^">^</button><button data-ins="-">−</button><button data-ins="sin(">sin</button><button data-ins="tan(">tan</button>
+      </div>
+      <div class="opts">
+        <label class="chk"><input type="checkbox" id="optApprox"> 37°/53° 取 sin37°=0.6、cos37°=0.8</label>
+        <label class="chk" id="optLeaveWrap">物块滑离木板后 <select id="optLeave"><option value="stop">停止模拟</option><option value="continue">落到地面继续运动</option></select></label>
+        <label class="chk" id="optCollWrap">碰撞类型 <select id="optColl"><option value="elastic">弹性碰撞</option><option value="stick">完全非弹性（粘连）</option><option value="e">按恢复系数 e</option><option value="none">不碰撞（追及相遇）</option></select></label>
+      </div>
+      <p class="note"><b>正方向约定：</b>水平时向右为正；倾斜时斜面左低右高，沿斜面向上为正。速度、外力填负值表示反向。位置从左端（底端）量起。最大静摩擦力按等于滑动摩擦力处理。</p>
+    </aside>
+
+    <div class="center">
+      <!-- 动画区：标题与显示开关 → 画面 → 播放条（按钮｜时间轴 + 过程轨道｜时刻｜倍速）→ 书签 → 实时数据 -->
+      <div class="card stage" id="stageCard">
+        <div class="card-h stage-bar"><h3>动画演示</h3><span class="muted" id="stageSub"></span>
+          <div class="tgls">
+            <div class="seg mini" id="dimSeg" role="group" aria-label="2D / 3D 视图切换"><button data-d="2" class="on">2D</button><button data-d="3">3D</button></div>
+            <label class="tgl"><input type="checkbox" id="chkVec" checked><span>速度矢量</span></label>
+            <label class="tgl"><input type="checkbox" id="chkForce"><span>力学分析</span></label>
+            <label class="tgl"><input type="checkbox" id="chkStep"><span>分过程暂停</span></label>
+            <button class="btn mini" id="btnShot" title="把当前画面保存为 PNG 图片">保存画面</button>
+          </div>
+        </div>
+        <div class="canvasWrap"><canvas id="scene" aria-label="模拟动画"></canvas>
+          <div class="vtools" id="vTools" aria-label="视图工具">
+            <button data-v="drag" id="btnDrag" title="3D 视图下：切换“拖动旋转 / 拖动平移”" hidden>拖动：旋转</button>
+            <button data-v="in" title="放大" aria-label="放大">＋</button>
+            <button data-v="out" title="缩小" aria-label="缩小">－</button>
+            <button data-v="fit" title="复位视图，显示全部画面（也可双击画面）">全景</button>
+            <button data-v="follow" id="btnFollow" title="镜头跟随物块">跟随</button>
+            <button data-v="fs" id="btnFS" title="全屏 / 退出全屏（Esc）">全屏</button>
+          </div>
+        </div>
+        <div class="transport">
+          <div class="tp-btns">
+            <button class="ib" id="btnReset" title="回到起点" aria-label="回到起点"><svg viewBox="0 0 16 16"><path d="M3 2.5h2v11H3zM13.5 2.5v11L6 8z"/></svg></button>
+            <button class="ib" id="btnPrev" title="上一过程" aria-label="上一过程"><svg viewBox="0 0 16 16"><path d="M8 3v10L2 8zM14.5 3v10l-6-5z"/></svg></button>
+            <button class="btn pri" id="btnPlay" style="min-width:86px">播放</button>
+            <button class="ib" id="btnNext" title="下一过程" aria-label="下一过程"><svg viewBox="0 0 16 16"><path d="M8 3v10l6-5zM1.5 3v10l6-5z"/></svg></button>
+          </div>
+          <div class="tp-line">
+            <div class="timeline"><div class="ticks" id="tlTicks"></div><input type="range" id="tl" min="0" max="1000" value="0" aria-label="时间轴"></div>
+            <div class="phasechips" id="phaseChips" aria-label="过程分段（宽度与时长成正比，点击跳转）"></div>
+          </div>
+          <output class="tp-time" id="tNow">t = 0 s</output>
+          <select id="selSpeed" aria-label="播放速度"><option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+        </div>
+        <div class="bmbar" id="bmBar" aria-label="时刻书签"></div>
+        <details class="fold" open><summary>实时数据</summary><div class="stats" id="stats"></div></details>
+        <div class="forcebox" id="forceBox" hidden></div>
+      </div>
+
+      <!-- 仅窄屏显示：在 参数 / 图表 / 分析 三块之间切换，动画始终在上方 -->
+      <div class="mtabs" id="mTabs"><button data-m="param">参数</button><button data-m="chart" class="on">图表</button><button data-m="info">分析</button></div>
+
+      <div class="card" id="chartCard">
+        <div class="card-h"><h3>实时图表</h3><span class="sp"></span>
+          <label class="tgl"><input type="checkbox" id="chkLink" checked><span>多图联动</span></label>
+          <label class="tgl"><input type="checkbox" id="chkFull" checked><span>预显完整曲线</span></label>
+          <button class="btn mini" id="btnCSV">导出数据 CSV</button></div>
+        <div class="chips" id="chartChips" style="margin-bottom:10px"></div>
+        <div class="chartGrid" id="chartGrid"></div>
+        <p class="note">多图联动：在任意一张图上移动鼠标（或手指横向拖动），动画、数据面板和其余图表会同步到该时刻；红色竖线为当前时刻，竖直虚线为过程分界。</p>
+      </div>
+    </div>
+
+    <aside class="card side" id="infoCard">
+      <div class="tabs" id="infoTabs"><button data-tab="phase" class="on" title="分过程说明">过程</button><button data-tab="solve" title="解题过程（公式推导）">解题</button><button data-tab="measure" title="任意时刻测量">测量</button><button data-tab="result" title="结果汇总">结果</button><button data-tab="flag" title="红旗 · 痕迹 · 摩擦生热">红旗</button><button data-tab="prob" title="题目与导出 Word">题目</button></div>
+      <div class="pane on" id="pane-phase"><div id="phaseList"></div></div>
+      <div class="pane" id="pane-result"><div id="resultBox"></div></div>
+      <div class="pane" id="pane-solve">
+        <div class="row" style="margin-top:0"><button class="btn mini pri" id="solRead">大屏阅读</button><button class="btn mini" id="solFill">填入“解析”栏</button><button class="btn mini" id="solCopy">复制全文</button></div>
+        <div id="solBox"></div>
+        <p class="note">解题过程由模拟结果自动生成：牛顿第二定律 → 运动学 → 动能定理 / 能量守恒 / 动量。</p>
+      </div>
+      <div class="pane" id="pane-measure">
+        <div class="grid2">
+          <label class="fld" style="margin-top:0"><span>测量时刻 t / s（可填 √2、2/3）</span><input id="msT" type="text" value="0"></label>
+          <label class="fld" style="margin-top:0"><span>对比时刻 t₂（可选）</span><input id="msT2" type="text" placeholder="留空则不比较"></label>
+        </div>
+        <div class="row"><button class="btn mini" id="msUse">取当前时刻</button><button class="btn mini" id="msGo">跳到该时刻</button><button class="btn mini" id="msBm">存为书签</button></div>
+        <div id="msOut"></div>
+        <h4 style="font-size:13px;margin:14px 0 2px">反查时刻：某个量何时等于给定值</h4>
+        <div class="grid2">
+          <label class="fld"><span>物理量</span><select id="msQ"></select></label>
+          <label class="fld"><span>目标值</span><input id="msVal" type="text" value="0"></label>
+        </div>
+        <div class="row"><button class="btn mini pri" id="msFind">查找时刻</button></div>
+        <div class="bmbar" id="msFound" style="flex-wrap:wrap;margin-top:0"></div>
+      </div>
+      <div class="pane" id="pane-flag">
+        <p class="note" style="margin-top:0">红旗标记“插旗时刻物块所在位置”。<b>地面旗</b>固定不动；<b>带/板旗</b>随传送带（木板）一起运动——物块与它的距离就是相对位移，黑色粗线是留下的痕迹。</p>
+        <div class="row"><button class="btn red" id="btnFlagBoth">此刻在物块处插旗</button><button class="btn" id="btnFlagG">只插地面旗</button><button class="btn" id="btnFlagC">只插带/板旗</button></div>
+        <ul class="flaglist" id="flagList"></ul>
+        <div class="row"><button class="btn mini" id="btnFlagClear">清除全部红旗</button><button class="btn mini" id="btnFlagInit">恢复 t=0 默认旗</button></div>
+        <div class="qbox" id="qBox"></div>
+      </div>
+      <div class="pane" id="pane-prob">
+        <label class="fld"><span>题目标题</span><input id="probTitle" type="text"></label>
+        <label class="fld"><span>题干</span><textarea id="probText" rows="6" placeholder="可手动填写，或由 AI 实验室生成后自动写入"></textarea></label>
+        <label class="fld"><span>参考答案</span><textarea id="probAns" rows="3"></textarea></label>
+        <label class="fld"><span>解析</span><textarea id="probAna" rows="6"></textarea></label>
+        <div class="row"><button class="btn pri" id="btnWord">导出 Word（含图）</button></div>
+        <p class="note">Word 文档包含题干、情景图、答案解析、分过程数据表和 v-t 图像。</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= 参数扫描 ================= -->
+<section class="view" id="view-sweep">
+  <div class="two">
+    <div class="card">
+      <div class="card-h"><h3>参数扫描实验</h3></div>
+      <p class="note" style="margin-top:0">以当前配置为基础，只改变一个参数，批量模拟并观察指标如何变化——从单次模拟到规律发现。</p>
+      <label class="fld"><span>扫描参数（自变量）</span><select id="swParam"></select></label>
+      <div class="grid2">
+        <label class="fld"><span>起始值</span><input id="swFrom" type="text" value="0.1"></label>
+        <label class="fld"><span>终止值</span><input id="swTo" type="text" value="1"></label>
+      </div>
+      <div class="grid2">
+        <label class="fld"><span>取点数（3~60）</span><input id="swSteps" type="number" min="3" max="60" value="19"></label>
+        <label class="fld"><span>观测指标（因变量）</span><select id="swMetric"></select></label>
+      </div>
+      <div class="row"><button class="btn pri" id="btnSweep">运行扫描</button><button class="btn" id="btnSweepAI">AI 自动设计实验</button></div>
+      <div class="tok" id="swTok"></div>
+      <pre class="aiout" id="swAIOut" hidden></pre>
+      <div id="swExps"></div>
+      <div class="card-h" style="margin-top:20px;border-top:1px dashed var(--line);padding-top:14px"><h3>参数反求</h3></div>
+      <p class="note" style="margin-top:0">把某个参数当作未知量“藏起来”，给出一个已知结果，系统在范围内自动求出它（可能有多解，结果尽量保留根号 / 分数）。</p>
+      <label class="fld"><span>未知参数</span><select id="invParam"></select></label>
+      <div class="grid2">
+        <label class="fld"><span>已知结果</span><select id="invMetric"></select></label>
+        <label class="fld"><span>它的数值</span><input id="invTarget" type="text" value="2"></label>
+      </div>
+      <div class="grid2">
+        <label class="fld"><span>搜索下限</span><input id="invLo" type="text" value="0"></label>
+        <label class="fld"><span>搜索上限</span><input id="invHi" type="text" value="1"></label>
+      </div>
+      <div class="row"><button class="btn pri" id="btnInv">求解未知参数</button></div>
+      <div id="invOut"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>扫描结果</h3><span class="sp"></span><button class="btn mini" id="btnSwCSV">导出 CSV</button><button class="btn mini" id="btnSwPNG">导出图片</button><button class="btn mini pri" id="btnSwSum">AI 总结规律</button></div>
+      <div class="chartGrid">
+        <figure class="chart"><canvas id="swChart1" style="height:290px;cursor:default"></canvas></figure>
+        <figure class="chart"><canvas id="swChart2" style="height:290px;cursor:default"></canvas></figure>
+      </div>
+      <pre class="aiout" id="swSumRaw" hidden></pre>
+      <div class="md" id="swSumOut"></div>
+      <div class="tblwrap"><table class="tbl" id="swTable"><tbody><tr><td style="text-align:left;font-family:var(--sans);color:var(--ink3)">尚未运行扫描</td></tr></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AI 实验室 ================= -->
+<section class="view" id="view-ai">
+  <div class="card">
+    <div class="tabs" id="aiTabs"><button data-tab="nl" class="on">说题即模拟</button><button data-tab="check">物理一致性校验</button><button data-tab="gen">AI 出题 · 导出 Word</button><button data-tab="chat">AI 对话助手</button></div>
+
+    <div class="pane on" id="ai-nl">
+      <div class="two">
+        <div>
+          <label class="fld"><span>把题目粘贴到这里（自然语言 → 模拟参数）</span><textarea id="nlText" rows="9" placeholder="例：如图所示，倾角为37°的传送带以10 m/s的速率沿斜面向下运行，在顶端无初速度放一质量为1 kg的物块，动摩擦因数μ=0.5，传送带长16 m，g取10 m/s²。求物块到达底端的时间、痕迹长度和摩擦生热。"></textarea></label>
+          <div class="row"><button class="btn" id="btnNlImg">上传题目图片（需视觉模型）</button><input type="file" id="nlImg" accept="image/*" hidden><span class="muted" id="nlImgHint"></span></div>
+          <div id="nlImgBox"></div>
+          <div class="tok" id="nlTok"></div>
+          <div class="row"><button class="btn pri" id="btnNL">AI 解析并模拟</button><button class="btn" id="btnNLLocal">离线规则解析（无需 AI）</button></div>
+          <pre class="aiout" id="nlOut" hidden></pre>
+        </div>
+        <div id="nlRes"><p class="note" style="margin-top:0">解析成功后会新建一份配置并立即运行模拟，原配置不会被覆盖。离线规则解析只识别常见写法（μ=、m/s、kg、°、长…m），方向需自行核对。</p></div>
+      </div>
+    </div>
+
+    <div class="pane" id="ai-check">
+      <p class="note" style="margin-top:0">两层校验防止“跑得动但物理错”：<b>本地规则</b>（摩擦约束、牛顿定律、能量守恒、逐步积分交叉验证）立即可用；<b>AI 深度校验</b>由大模型独立推导后逐项比对。</p>
+      <div class="row"><button class="btn pri" id="btnChkLocal">运行本地校验</button><button class="btn" id="btnChkAI">AI 深度校验</button></div>
+      <div class="tok" id="chkTok"></div>
+      <div class="two eq">
+        <div><h4 style="font-size:13px;margin:6px 0">本地规则校验</h4><div id="chkLocalBox"></div></div>
+        <div><h4 style="font-size:13px;margin:6px 0">AI 深度校验</h4><pre class="aiout" id="chkAIOut" hidden></pre><div id="chkAIBox"><p class="muted">尚未运行</p></div></div>
+      </div>
+    </div>
+
+    <div class="pane" id="ai-gen">
+      <p class="note" style="margin-top:0">AI 基于当前配置与题干改编新题 → 模拟器精确计算 → AI 依据模拟结果撰写答案与解析。可一键“应用到网页”（更改页面内容）或导出带图 Word。</p>
+      <div class="row">
+        <label class="chk">难度 <select id="genLevel" class="inp" style="width:auto"><option>基础</option><option selected>中等</option><option>压轴</option></select></label>
+        <label class="chk">题型 <select id="genType" class="inp" style="width:auto"><option selected>计算题</option><option>选择题</option><option>多过程综合题</option></select></label>
+        <label class="chk">数量 <select id="genCount" class="inp" style="width:auto"><option>1</option><option selected>2</option><option>3</option></select></label>
+      </div>
+      <label class="fld"><span>补充要求（可选）</span><input id="genExtra" type="text" placeholder="例：改成倾斜传送带；必须考查痕迹与 Q 的区别"></label>
+      <div class="tok" id="genTok"></div>
+      <div class="row"><button class="btn pri" id="btnGen">生成新题 + 答案解析</button><button class="btn" id="btnGenWord">全部导出 Word</button></div>
+      <pre class="aiout" id="genOut" hidden></pre>
+      <div id="genList"></div>
+    </div>
+
+    <div class="pane" id="ai-chat">
+      <p class="note" style="margin-top:0">助手能看到当前模拟的参数、分过程数据和结果，可以答疑、讲原理，也能按你的话修改参数（如“把 μ 改成 0.3”），修改需你点击确认后才生效。</p>
+      <div class="chips" id="chatQuick"></div>
+      <div class="chat" id="chatLog" style="margin-top:8px" aria-live="polite"></div>
+      <div class="tok" id="chatTok"></div>
+      <div class="row"><textarea id="chatInput" class="inp" rows="2" placeholder="输入问题，Enter 发送，Shift+Enter 换行" style="flex:1 1 240px"></textarea><button class="btn pri" id="chatSend">发送</button><button class="btn" id="chatClear">清空</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 模型配置 ================= -->
+<section class="view" id="view-set">
+  <div class="two eq">
+    <div class="card">
+      <div class="card-h"><h3>模型供应商</h3><span class="sp"></span><button class="btn pri" id="btnAddProv">＋ 添加供应商</button></div>
+      <div id="provList"></div>
+      <div class="tok" id="usageBox"></div>
+      <p class="note">点击「启用」即可一键切换当前模型。接口需兼容 OpenAI Chat Completions 格式并允许浏览器跨域访问。API Key 只保存在本机浏览器，不会写入备份文件或导出的网页。</p>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>内置 AI 提示词</h3><span class="sp"></span><button class="btn mini" id="btnPromptReset">恢复默认</button></div>
+      <label class="fld"><span>选择提示词（可直接修改，自动保存）</span><select id="promptSel"></select></label>
+      <textarea id="promptText" class="inp" rows="16" style="font:12px/1.6 var(--mono)"></textarea>
+      <div class="tok" id="promptTok"></div>
+      <p class="note">占位符：<code>{{SCHEMA}}</code> 配置结构说明、<code>{{PARAMS}}</code> 可扫描参数、<code>{{METRICS}}</code> 可观测指标，调用时自动替换。</p>
+      <details class="note"><summary style="cursor:pointer;font-weight:600">二次开发 / 扩展说明</summary>
+        <p>源码按注册表组织：<code>MODELS</code>（模型与参数定义、例题）、<code>CHARTS</code>（图表）、<code>METRICS</code>（扫描指标）、<code>PROMPTS</code>（提示词）、<code>AI.PRESETS</code>（供应商预设）。新增一条记录即可出现在界面与 AI 提示词中；物理求解集中在 <code>solveContact()</code>、<code>simulate()</code>（传送带 / 板块）与 <code>simulateDuo()</code>（两物块碰撞相遇）。解题过程在 <code>solutionSteps()</code>，力学分析箭头在 <code>renderScene()</code> 的 <code>o.forces</code> 分支。新模型可在 <code>MODELS</code> 条目里自带 <code>simulate / build / normalize / pack</code>，模拟结果对象可自带 <code>resultRows / checks / solution / render2D / infoBox / tiles / names</code> 等钩子（参考人船模型 <code>MODELS.boat</code> 与例题拼合 <code>MODELS.combo</code>）；拼合可用的阶段类型在 <code>STAGE_TYPES</code> 注册表里，新增一条（参数表 + <code>make</code> + <code>judge</code>）即可多一种阶段，画法在 <code>renderChain()</code>；3D 画法集中在 <code>render3D()</code>。</p>
+      </details>
+    </div>
+  </div>
+</section>
+<!-- ================= 插件市场（由 React 挂载） ================= -->
+<section class="view" id="view-market"><div id="market-root"></div></section>
+
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+
+<dialog class="dlg" id="dlgNew">
+  <form method="dialog" class="dlg-b">
+    <h3>新建配置</h3>
+    <label class="fld"><span>配置名称</span><input id="newName" type="text" placeholder="例如：第3题 倾斜传送带"></label>
+    <label class="fld"><span>模型</span><select id="newModel"></select></label>
+    <label class="fld"><span>起始模板</span><select id="newPreset"></select></label>
+    <div class="dlg-f"><button type="button" class="btn" id="newCancel">取消</button><button class="btn pri" id="newOk" value="ok">创建</button></div>
+  </form>
+</dialog>
+
+<dialog class="dlg read" id="dlgRead">
+  <div class="read-h"><h3 id="readTitle"></h3><span class="sp"></span><button class="btn mini" id="readWord">导出 Word</button><button class="btn mini pri" id="readClose">关闭</button></div>
+  <div class="read-b" id="readBody"></div>
+</dialog>
+
+<dialog class="dlg" id="dlgProv">
+  <form method="dialog" class="dlg-b">
+    <h3 id="pvTitle">添加供应商</h3>
+    <div class="chips" id="pvPresets"></div>
+    <label class="fld"><span>名称</span><input id="pvName" type="text"></label>
+    <label class="fld"><span>API 地址（Base URL，自动拼接 /chat/completions）</span><input id="pvURL" type="text" placeholder="https://api.example.com/v1"></label>
+    <label class="fld"><span>API Key</span><input id="pvKey" type="password" autocomplete="off" placeholder="sk-..."></label>
+    <label class="chk"><input type="checkbox" id="pvKeyShow"> 显示 Key</label>
+    <label class="fld"><span>模型</span><input id="pvModel" type="text" list="pvModels"><datalist id="pvModels"></datalist></label>
+    <div class="grid2">
+      <label class="fld"><span>上下文窗口（tokens，用于占比估算）</span><input id="pvCtx" type="number" min="1000" step="1000"></label>
+      <label class="fld"><span>temperature</span><input id="pvTemp" type="number" min="0" max="2" step="0.1"></label>
+    </div>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="pvVision"> 支持视觉（可识别题目图片）</label>
+      <label class="chk"><input type="checkbox" id="pvJson"> JSON 模式</label>
+      <label class="chk"><input type="checkbox" id="pvStream"> 流式输出</label>
+    </div>
+    <div class="grid2">
+      <label class="fld"><span>视觉模型（留空则用上面的模型）</span><input id="pvVModel" type="text"></label>
+      <label class="fld"><span>图片传参格式</span><select id="pvImgRaw"><option value="0">data:URL（OpenAI 标准）</option><option value="1">纯 Base64（智谱）</option></select></label>
+    </div>
+    <div class="dlg-f"><button type="button" class="btn" id="pvCancel">取消</button><button class="btn pri" id="pvSave" value="ok">保存</button></div>
+  </form>
+</dialog>
+
